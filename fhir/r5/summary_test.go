@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/codeninja55/go-radx/fhir"
-	"github.com/codeninja55/go-radx/fhir/r5"
+	"github.com/failed33/go-radx/fhir"
+	"github.com/failed33/go-radx/fhir/r5"
 )
 
 // objectKeys decodes a JSON object's top-level keys in their wire order, so a test can

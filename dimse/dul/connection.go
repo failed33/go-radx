@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/codeninja55/go-radx/dimse/pdu"
+	"github.com/failed33/go-radx/dimse/pdu"
 )
 
 // Conn is the socket owner at the DUL layer: it wraps a net.Conn and frames PDUs through

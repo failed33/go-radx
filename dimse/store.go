@@ -3,7 +3,7 @@ package dimse
 import (
 	"context"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // storeMessageID is the Message ID used for a single C-STORE request. A Store is one

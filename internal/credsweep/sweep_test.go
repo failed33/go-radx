@@ -28,13 +28,13 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dicomweb"
-	"github.com/codeninja55/go-radx/dimse"
-	"github.com/codeninja55/go-radx/fhir"
-	"github.com/codeninja55/go-radx/fhir/rest"
-	"github.com/codeninja55/go-radx/internal/phisweep"
-	"github.com/codeninja55/go-radx/server"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dicomweb"
+	"github.com/failed33/go-radx/dimse"
+	"github.com/failed33/go-radx/fhir"
+	"github.com/failed33/go-radx/fhir/rest"
+	"github.com/failed33/go-radx/internal/phisweep"
+	"github.com/failed33/go-radx/server"
 )
 
 // The sentinels below are deliberately synthetic and never real credentials. Each is

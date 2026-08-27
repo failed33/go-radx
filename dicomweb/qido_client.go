@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // SearchQuery is the client-side QIDO-RS query a caller builds for SearchStudies,

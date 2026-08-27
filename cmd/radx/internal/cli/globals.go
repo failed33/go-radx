@@ -8,7 +8,7 @@ import (
 
 	"go.uber.org/zap/zapcore"
 
-	"github.com/codeninja55/go-radx/logging"
+	"github.com/failed33/go-radx/logging"
 )
 
 // Globals holds the flags every command shares. Kong embeds it in the root grammar, so each

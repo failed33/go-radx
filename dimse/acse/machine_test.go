@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dimse/dul"
+	"github.com/failed33/go-radx/dimse/dul"
 )
 
 // TestRequestorMachineExposesStateMachine verifies the message layer can reach the

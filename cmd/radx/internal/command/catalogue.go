@@ -13,12 +13,12 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/codeninja55/go-radx/cmd/radx/internal/cli"
-	"github.com/codeninja55/go-radx/cmd/radx/internal/exitcode"
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse"
-	"github.com/codeninja55/go-radx/logging"
-	"github.com/codeninja55/go-radx/server"
+	"github.com/failed33/go-radx/cmd/radx/internal/cli"
+	"github.com/failed33/go-radx/cmd/radx/internal/exitcode"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse"
+	"github.com/failed33/go-radx/logging"
+	"github.com/failed33/go-radx/server"
 )
 
 // catalogueColumns is the catalogue's column set, mirroring the server package's index schema, used

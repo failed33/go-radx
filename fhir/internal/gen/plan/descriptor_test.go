@@ -3,7 +3,7 @@ package plan
 import (
 	"testing"
 
-	"github.com/codeninja55/go-radx/fhir/internal/gen/model"
+	"github.com/failed33/go-radx/fhir/internal/gen/model"
 )
 
 // buildDescriptorType hand-builds a resource model.Type with the four element shapes the

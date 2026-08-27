@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse/dul"
-	"github.com/codeninja55/go-radx/dimse/pdu"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/dul"
+	"github.com/failed33/go-radx/dimse/pdu"
 )
 
 // echoAndStorageContexts builds a single proposal list combining the Verification context and the

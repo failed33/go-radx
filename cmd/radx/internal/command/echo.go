@@ -8,10 +8,10 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/codeninja55/go-radx/cmd/radx/internal/cli"
-	"github.com/codeninja55/go-radx/cmd/radx/internal/exitcode"
-	"github.com/codeninja55/go-radx/dimse"
-	"github.com/codeninja55/go-radx/logging"
+	"github.com/failed33/go-radx/cmd/radx/internal/cli"
+	"github.com/failed33/go-radx/cmd/radx/internal/exitcode"
+	"github.com/failed33/go-radx/dimse"
+	"github.com/failed33/go-radx/logging"
 )
 
 // EchoCmd verifies DICOM connectivity by opening an association to a remote AE, sending a

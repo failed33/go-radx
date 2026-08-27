@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/cmd/radx/internal/exitcode"
-	"github.com/codeninja55/go-radx/hl7v2"
+	"github.com/failed33/go-radx/cmd/radx/internal/exitcode"
+	"github.com/failed33/go-radx/hl7v2"
 )
 
 // syntheticORM is a minimal, fully synthetic HL7 v2 order message. The names and identifiers are

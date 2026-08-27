@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"time"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // Default timeouts mirror the pynetdicom defaults (dimse.md "Application Entity"). All are

@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // TestCGetCommandFieldValues pins the C-GET command field constants to their PS3.7 wire values.

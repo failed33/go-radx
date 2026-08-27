@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/cmd/radx/internal/exitcode"
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse"
+	"github.com/failed33/go-radx/cmd/radx/internal/exitcode"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse"
 )
 
 // captureStoreHandler is an in-process Storage SCP that records the SOP Instance UIDs it receives

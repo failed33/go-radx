@@ -12,7 +12,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/codeninja55/go-radx/fhir"
+	"github.com/failed33/go-radx/fhir"
 )
 
 // ErrContained is the sentinel wrapped by DomainResource.Contained when a contained

@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/codeninja55/go-radx/fhir/internal/gen/plan"
+	"github.com/failed33/go-radx/fhir/internal/gen/plan"
 )
 
 // descriptorFixture is a representative pair of validation descriptors: one resource with

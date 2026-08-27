@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/codeninja55/go-radx/cmd/radx/internal/exitcode"
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/cmd/radx/internal/exitcode"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // writeCataloguePatientDICOM writes a synthetic storable file carrying a PatientID sentinel, so a

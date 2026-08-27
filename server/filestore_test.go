@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // newTestObject builds a minimal valid object carrying the study/series/instance hierarchy the

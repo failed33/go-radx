@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/codeninja55/go-radx/dimse"
+	"github.com/failed33/go-radx/dimse"
 )
 
 // codePresetCounts is the code-side source of truth for presentation-context preset counts: it
@@ -49,7 +49,7 @@ func repoRoot(t *testing.T) string {
 	}
 	for {
 		data, err := os.ReadFile(filepath.Join(dir, "go.mod"))
-		if err == nil && strings.Contains(string(data), "module github.com/codeninja55/go-radx\n") {
+		if err == nil && strings.Contains(string(data), "module github.com/failed33/go-radx\n") {
 			return dir
 		}
 		parent := filepath.Dir(dir)

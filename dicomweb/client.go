@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // defaultMaxResponseBytes caps a single response body before allocation (PRD §9.3). It

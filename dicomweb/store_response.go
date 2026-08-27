@@ -5,7 +5,7 @@ import (
 	"math"
 	"strings"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // StoreResponse models the STOW-RS store response document (PS3.18 §10.5), parsed from

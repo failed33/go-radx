@@ -11,11 +11,11 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/codeninja55/go-radx/cmd/radx/internal/cli"
-	"github.com/codeninja55/go-radx/cmd/radx/internal/exitcode"
-	"github.com/codeninja55/go-radx/fhir"
-	"github.com/codeninja55/go-radx/logging"
-	"github.com/codeninja55/go-radx/server"
+	"github.com/failed33/go-radx/cmd/radx/internal/cli"
+	"github.com/failed33/go-radx/cmd/radx/internal/exitcode"
+	"github.com/failed33/go-radx/fhir"
+	"github.com/failed33/go-radx/logging"
+	"github.com/failed33/go-radx/server"
 )
 
 // ServeCmd groups the reference daemons. serve dicomweb wires the server package's DICOMweb role

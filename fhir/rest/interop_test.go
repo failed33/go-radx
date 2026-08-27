@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/fhir"
-	"github.com/codeninja55/go-radx/fhir/r4"
-	"github.com/codeninja55/go-radx/fhir/rest"
+	"github.com/failed33/go-radx/fhir"
+	"github.com/failed33/go-radx/fhir/r4"
+	"github.com/failed33/go-radx/fhir/rest"
 )
 
 // TestInteropHAPIServer drives the go-radx FHIR REST client against an EXTERNAL reference FHIR server

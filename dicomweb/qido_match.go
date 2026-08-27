@@ -3,7 +3,7 @@ package dicomweb
 import (
 	"strings"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // matchKeyTypes are the VRs whose values support a date/time range match ("lo-hi", PS3.18

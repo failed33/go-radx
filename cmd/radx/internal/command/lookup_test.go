@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/codeninja55/go-radx/cmd/radx/internal/exitcode"
+	"github.com/failed33/go-radx/cmd/radx/internal/exitcode"
 )
 
 // TestLookupByKeyword confirms a keyword resolves to its canonical tag, VR, and name from the

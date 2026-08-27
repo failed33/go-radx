@@ -12,15 +12,15 @@ import (
 
 	"github.com/alecthomas/kong"
 
-	"github.com/codeninja55/go-radx/convert"
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dicomweb"
-	"github.com/codeninja55/go-radx/dimse"
-	"github.com/codeninja55/go-radx/dimse/acse"
-	"github.com/codeninja55/go-radx/dimse/dul"
-	"github.com/codeninja55/go-radx/dimse/pdu"
-	"github.com/codeninja55/go-radx/fhir"
-	"github.com/codeninja55/go-radx/hl7v2"
+	"github.com/failed33/go-radx/convert"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dicomweb"
+	"github.com/failed33/go-radx/dimse"
+	"github.com/failed33/go-radx/dimse/acse"
+	"github.com/failed33/go-radx/dimse/dul"
+	"github.com/failed33/go-radx/dimse/pdu"
+	"github.com/failed33/go-radx/fhir"
+	"github.com/failed33/go-radx/hl7v2"
 )
 
 // TestClassifyTotality asserts a representative error of every taxonomy category maps to the

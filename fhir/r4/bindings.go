@@ -3,7 +3,7 @@
 package r4
 
 import (
-	"github.com/codeninja55/go-radx/fhir"
+	"github.com/failed33/go-radx/fhir"
 )
 
 // AccountStatus is the closed Go enum for the FHIR required binding "AccountStatus"

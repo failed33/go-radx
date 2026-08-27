@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse/dul"
-	"github.com/codeninja55/go-radx/dimse/pdu"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/dul"
+	"github.com/failed33/go-radx/dimse/pdu"
 )
 
 // pdvOverhead is the per-PDV item overhead that counts against the negotiated Maximum Length: the

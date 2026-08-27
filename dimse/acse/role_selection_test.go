@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dimse/pdu"
+	"github.com/failed33/go-radx/dimse/pdu"
 )
 
 // TestNegotiateRolesGrantsRequestedRoles verifies the acceptor grants the SCP and SCU roles

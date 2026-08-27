@@ -3,8 +3,8 @@ package convert
 import (
 	"testing"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/hl7v2"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/hl7v2"
 )
 
 // TestHL7DateTimeToFHIR confirms the HL7 DTM lexical form is rendered to a valid

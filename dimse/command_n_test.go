@@ -3,7 +3,7 @@ package dimse
 import (
 	"testing"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // TestNGetNDeleteCommandFieldValues pins the N-GET and N-DELETE command field constants to their

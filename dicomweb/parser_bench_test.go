@@ -5,7 +5,7 @@ import (
 	"io"
 	"testing"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // benchMetadataDataSet builds a metadata-shaped dataset roughly the size a QIDO-RS result

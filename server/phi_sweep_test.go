@@ -15,11 +15,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse"
-	"github.com/codeninja55/go-radx/fhir"
-	"github.com/codeninja55/go-radx/internal/phisweep"
-	"github.com/codeninja55/go-radx/logging"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse"
+	"github.com/failed33/go-radx/fhir"
+	"github.com/failed33/go-radx/internal/phisweep"
+	"github.com/failed33/go-radx/logging"
 )
 
 // PHI sentinels: synthetic, never real, yet shaped like the patient values they stand in for, so a

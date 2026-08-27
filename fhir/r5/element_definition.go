@@ -4,7 +4,7 @@ package r5
 
 import (
 	"encoding/json"
-	"github.com/codeninja55/go-radx/fhir"
+	"github.com/failed33/go-radx/fhir"
 )
 
 // ElementDefinition is the generated FHIR ElementDefinition datatype.

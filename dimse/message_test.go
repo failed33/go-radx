@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse/pdu"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/pdu"
 )
 
 // sampleStoreDataSet builds a tiny dataset with a SOP Class/Instance and one extra element, enough

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // xmlRoundTripDataSet builds the canonical mixed dataset the XML parity tests exercise: a

@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse/acse"
-	"github.com/codeninja55/go-radx/dimse/dul"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/acse"
+	"github.com/failed33/go-radx/dimse/dul"
 )
 
 // mppsObservation records what the mock MPPS SCP saw, for the unit tests to assert against without

@@ -6,9 +6,9 @@ import (
 	"math"
 	"net"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse/acse"
-	"github.com/codeninja55/go-radx/dimse/dul"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/acse"
+	"github.com/failed33/go-radx/dimse/dul"
 )
 
 // StorageCommitmentPushModelSOPClass is the Storage Commitment Push Model SOP Class UID (PS3.4 J.3),

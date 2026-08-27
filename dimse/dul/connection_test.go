@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dimse/pdu"
+	"github.com/failed33/go-radx/dimse/pdu"
 )
 
 func TestConnWriteReadPDURoundTrip(t *testing.T) {

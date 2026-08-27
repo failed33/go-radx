@@ -3,7 +3,7 @@ package dimse
 import (
 	"context"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // ModalityPerformedProcedureStepSOPClass is the Modality Performed Procedure Step SOP Class UID

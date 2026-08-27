@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dimse/acse"
-	"github.com/codeninja55/go-radx/dimse/dul"
+	"github.com/failed33/go-radx/dimse/acse"
+	"github.com/failed33/go-radx/dimse/dul"
 )
 
 // scpResult captures what the SCP-side dispatch observed for a single inbound association.

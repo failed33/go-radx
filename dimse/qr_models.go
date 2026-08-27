@@ -1,6 +1,6 @@
 package dimse
 
-import "github.com/codeninja55/go-radx/dicom"
+import "github.com/failed33/go-radx/dicom"
 
 // Additional Query/Retrieve Information Model SOP Class UIDs, verified against the DICOM registry
 // (PS3.6 Annex A) and pynetdicom's sop_class exports (the `_QR_CLASSES` table). These reuse the

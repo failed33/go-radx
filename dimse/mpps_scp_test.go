@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // startMPPSServer serves an MPPSProvider over a Modality Performed Procedure Step presentation context

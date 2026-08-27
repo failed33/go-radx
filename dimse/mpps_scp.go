@@ -5,7 +5,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // MPPS SCP status codes (PS3.4 F.7.2 plus the PS3.7 Annex C general DIMSE-N codes the Modality

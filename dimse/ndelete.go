@@ -3,7 +3,7 @@ package dimse
 import (
 	"context"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // NDelete issues an N-DELETE that removes an existing managed SOP Instance (PS3.7 §10.1.6).

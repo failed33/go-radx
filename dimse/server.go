@@ -7,10 +7,10 @@ import (
 	"net"
 	"sync"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse/acse"
-	"github.com/codeninja55/go-radx/dimse/dul"
-	"github.com/codeninja55/go-radx/dimse/pdu"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/acse"
+	"github.com/failed33/go-radx/dimse/dul"
+	"github.com/failed33/go-radx/dimse/pdu"
 )
 
 // defaultMaxAssociations bounds concurrent inbound associations when WithMaxAssociations is not

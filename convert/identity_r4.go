@@ -1,8 +1,8 @@
 package convert
 
 import (
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/fhir/r4"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/fhir/r4"
 )
 
 // UIDIdentifierR4 turns a DICOM UID into a FHIR R4 Identifier, the R4 twin of

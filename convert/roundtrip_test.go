@@ -4,9 +4,9 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/fhir/r5"
-	"github.com/codeninja55/go-radx/hl7v2"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/fhir/r5"
+	"github.com/failed33/go-radx/hl7v2"
 )
 
 // roundTripUIDRoot is a valid test organisation root for minting deterministic UIDs on

@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // nativeDicomModelNamespace is the XML namespace of the PS3.19 Native DICOM Model. PS3.18

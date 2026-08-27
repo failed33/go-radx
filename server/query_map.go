@@ -1,9 +1,9 @@
 package server
 
 import (
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dicomweb"
-	"github.com/codeninja55/go-radx/dimse"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dicomweb"
+	"github.com/failed33/go-radx/dimse"
 )
 
 // dimseLevelFromQIDO maps a QIDO-RS search level to the shared dimse.QueryLevel the Catalogue queries

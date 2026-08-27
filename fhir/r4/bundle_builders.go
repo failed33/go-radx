@@ -24,7 +24,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/codeninja55/go-radx/fhir"
+	"github.com/failed33/go-radx/fhir"
 )
 
 // ErrInvalidBundle is the sentinel wrapped by every builder rejection. A caller

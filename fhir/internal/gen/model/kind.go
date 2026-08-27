@@ -1,6 +1,6 @@
 package model
 
-import "github.com/codeninja55/go-radx/fhir/internal/gen/loader"
+import "github.com/failed33/go-radx/fhir/internal/gen/loader"
 
 // Kind classifies a StructureDefinition by the FHIR meta-kind that decides how the
 // later stages treat it: a primitive type becomes a Go scalar, a complex type a

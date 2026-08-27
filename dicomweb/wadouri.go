@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // WADO-URI query parameters (PS3.18 §9.3). The legacy URI service identifies a single object

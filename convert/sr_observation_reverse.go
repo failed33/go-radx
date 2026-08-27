@@ -1,8 +1,8 @@
 package convert
 
 import (
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/fhir/r5"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/fhir/r5"
 )
 
 // ObservationToContentItem maps one FHIR R5 Observation back to a DICOM SR content-item

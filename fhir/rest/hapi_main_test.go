@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/fhir/rest/integration/hapi"
+	"github.com/failed33/go-radx/fhir/rest/integration/hapi"
 )
 
 // TestMain provisions the HAPI FHIR server container for the interop gate. When

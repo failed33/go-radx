@@ -3,7 +3,7 @@ package dimse
 import (
 	"context"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // NGetResult is the parsed result of an N-GET operation (PS3.7 §10.1.2): the typed status the SCP

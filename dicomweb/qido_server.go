@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // studyReturnAttributes are the default Study-level return attributes a QIDO-RS study

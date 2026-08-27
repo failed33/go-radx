@@ -3,7 +3,7 @@ package model
 import (
 	"testing"
 
-	"github.com/codeninja55/go-radx/fhir/internal/gen/loader"
+	"github.com/failed33/go-radx/fhir/internal/gen/loader"
 )
 
 func TestClassify(t *testing.T) {

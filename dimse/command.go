@@ -7,7 +7,7 @@ import (
 	"io"
 	"sort"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // CommandField is the DIMSE command type (0000,0100), a US value (PS3.7 §9.3, §10.3). The

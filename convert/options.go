@@ -1,9 +1,9 @@
 package convert
 
 import (
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/fhir/r4"
-	"github.com/codeninja55/go-radx/fhir/r5"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/fhir/r4"
+	"github.com/failed33/go-radx/fhir/r5"
 )
 
 // Option configures a conversion. The zero options mean: strict-loss off (drops

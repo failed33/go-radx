@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse/acse"
-	"github.com/codeninja55/go-radx/dimse/dul"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/acse"
+	"github.com/failed33/go-radx/dimse/dul"
 )
 
 // moveResponse is a canned C-MOVE-RSP the mock SCP returns: a status code, the four sub-operation

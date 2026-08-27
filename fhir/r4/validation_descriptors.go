@@ -2,7 +2,7 @@
 
 package r4
 
-import "github.com/codeninja55/go-radx/fhir"
+import "github.com/failed33/go-radx/fhir"
 
 // init registers a structural validation descriptor for every r4 resource with
 // the release-local Registry, so r4.Validate can check a resource's

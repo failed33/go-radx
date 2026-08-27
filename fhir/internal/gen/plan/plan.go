@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/codeninja55/go-radx/fhir/internal/gen/model"
+	"github.com/failed33/go-radx/fhir/internal/gen/model"
 )
 
 // PlannedType is the emitter-ready plan for one FHIR type: a Go struct with decided

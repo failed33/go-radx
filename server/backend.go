@@ -5,8 +5,8 @@ import (
 	"iter"
 	"net/http"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse"
 )
 
 // ObjectStore persists DICOM objects as opaque, addressable blobs keyed by SOP Instance UID. It is

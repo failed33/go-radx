@@ -7,11 +7,11 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/codeninja55/go-radx/cmd/radx/internal/cli"
-	"github.com/codeninja55/go-radx/cmd/radx/internal/exitcode"
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse"
-	"github.com/codeninja55/go-radx/logging"
+	"github.com/failed33/go-radx/cmd/radx/internal/cli"
+	"github.com/failed33/go-radx/cmd/radx/internal/exitcode"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse"
+	"github.com/failed33/go-radx/logging"
 )
 
 // GetCmd retrieves instances over the same association with a C-GET (dcmtk's getscu). The peer

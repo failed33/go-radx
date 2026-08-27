@@ -3,8 +3,8 @@ package dimse
 import (
 	"context"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse/acse"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/acse"
 )
 
 // nRequestFromCommand builds the no-PHI NRequest a DIMSE-N handler receives from an inbound command

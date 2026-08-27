@@ -15,9 +15,9 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse"
-	"github.com/codeninja55/go-radx/fhir"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse"
+	"github.com/failed33/go-radx/fhir"
 )
 
 // PHI sentinels for the audit no-leak assertions, the internal/phisweep convention:

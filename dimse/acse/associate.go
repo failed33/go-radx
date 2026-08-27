@@ -7,8 +7,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/codeninja55/go-radx/dimse/dul"
-	"github.com/codeninja55/go-radx/dimse/pdu"
+	"github.com/failed33/go-radx/dimse/dul"
+	"github.com/failed33/go-radx/dimse/pdu"
 )
 
 // applicationContextUID is the DICOM Application Context Name negotiated in every

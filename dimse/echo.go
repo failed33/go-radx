@@ -3,7 +3,7 @@ package dimse
 import (
 	"context"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // echoMessageID is the Message ID used for a C-ECHO request. A C-ECHO is a single

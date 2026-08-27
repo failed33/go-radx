@@ -6,8 +6,8 @@ import (
 	"iter"
 	"time"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse/dul"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/dul"
 )
 
 // QueryLevel is the Query/Retrieve Level (0008,0052) for C-FIND/C-GET/C-MOVE (PS3.4 C.3). It

@@ -8,10 +8,10 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/codeninja55/go-radx/cmd/radx/internal/cli"
-	"github.com/codeninja55/go-radx/cmd/radx/internal/exitcode"
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/logging"
+	"github.com/failed33/go-radx/cmd/radx/internal/cli"
+	"github.com/failed33/go-radx/cmd/radx/internal/exitcode"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/logging"
 )
 
 // OrganizeCmd lays out a flat or mixed directory of DICOM files into a Study/Series/SOP hierarchy

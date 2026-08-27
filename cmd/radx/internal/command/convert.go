@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/codeninja55/go-radx/cmd/radx/internal/cli"
-	"github.com/codeninja55/go-radx/cmd/radx/internal/exitcode"
-	"github.com/codeninja55/go-radx/convert"
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/hl7v2"
+	"github.com/failed33/go-radx/cmd/radx/internal/cli"
+	"github.com/failed33/go-radx/cmd/radx/internal/exitcode"
+	"github.com/failed33/go-radx/convert"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/hl7v2"
 )
 
 // releaseR4 and releaseR5 are the --release enum values. R5 is the default (the PRD's R5-first

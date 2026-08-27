@@ -7,7 +7,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/codeninja55/go-radx/fhir"
+	"github.com/failed33/go-radx/fhir"
 )
 
 // This file holds the FHIR server-role write interactions beyond create: update (PUT), patch

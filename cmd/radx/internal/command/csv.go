@@ -3,7 +3,7 @@ package command
 import (
 	"encoding/csv"
 
-	"github.com/codeninja55/go-radx/cmd/radx/internal/cli"
+	"github.com/failed33/go-radx/cmd/radx/internal/cli"
 )
 
 // csvWriter wraps the encoding/csv writer so a command holds one instance across a streamed

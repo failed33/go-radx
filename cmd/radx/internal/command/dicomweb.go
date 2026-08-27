@@ -6,11 +6,11 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/codeninja55/go-radx/cmd/radx/internal/cli"
-	"github.com/codeninja55/go-radx/cmd/radx/internal/exitcode"
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dicomweb"
-	"github.com/codeninja55/go-radx/logging"
+	"github.com/failed33/go-radx/cmd/radx/internal/cli"
+	"github.com/failed33/go-radx/cmd/radx/internal/exitcode"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dicomweb"
+	"github.com/failed33/go-radx/logging"
 )
 
 // DICOMwebCmd groups the WADO-RS / STOW-RS / QIDO-RS clients. --url is the DICOMweb base; a bearer

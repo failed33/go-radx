@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/codeninja55/go-radx/fhir/internal/gen/loader"
+	"github.com/failed33/go-radx/fhir/internal/gen/loader"
 )
 
 // updateGolden, set with -update, rewrites the committed golden snapshots from the

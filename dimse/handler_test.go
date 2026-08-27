@@ -6,8 +6,8 @@ import (
 	"iter"
 	"testing"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse/pdu"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/pdu"
 )
 
 // echoHandler is a minimal Handler that records the OpInfo it was called with and returns a

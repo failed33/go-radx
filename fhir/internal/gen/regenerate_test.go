@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/codeninja55/go-radx/fhir/internal/gen/loader"
+	"github.com/failed33/go-radx/fhir/internal/gen/loader"
 )
 
 // regenerationCases pairs each release with its committed generated package and the

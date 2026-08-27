@@ -16,10 +16,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/fhir"
-	"github.com/codeninja55/go-radx/fhir/r4"
-	"github.com/codeninja55/go-radx/fhir/r5"
-	"github.com/codeninja55/go-radx/fhir/rest"
+	"github.com/failed33/go-radx/fhir"
+	"github.com/failed33/go-radx/fhir/r4"
+	"github.com/failed33/go-radx/fhir/r5"
+	"github.com/failed33/go-radx/fhir/rest"
 )
 
 // startFHIRDaemonRepo mounts a FHIR role over the given Repository on a loopback OS-assigned port,

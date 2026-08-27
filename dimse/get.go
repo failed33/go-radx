@@ -5,8 +5,8 @@ import (
 	"errors"
 	"iter"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse/dul"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/dul"
 )
 
 // Get issues a C-GET and yields each response Status (PS3.4 C.4.3). Unlike a C-MOVE, a C-GET carries

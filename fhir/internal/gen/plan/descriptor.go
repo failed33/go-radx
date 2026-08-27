@@ -1,6 +1,6 @@
 package plan
 
-import "github.com/codeninja55/go-radx/fhir/internal/gen/model"
+import "github.com/failed33/go-radx/fhir/internal/gen/model"
 
 // ValidationDescriptor is the emitter-ready plan for one resource's structural
 // validation: the required top-level elements (checked for presence, not truthiness),

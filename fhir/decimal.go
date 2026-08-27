@@ -1,6 +1,6 @@
 package fhir
 
-import "github.com/codeninja55/go-radx/dicom"
+import "github.com/failed33/go-radx/dicom"
 
 // Decimal preserves the source lexical form of a FHIR decimal, so 1.20 and 1.2
 // stay distinguishable and trailing zeros survive a round-trip. It is an alias

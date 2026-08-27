@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/codeninja55/go-radx/hl7v2"
+	"github.com/failed33/go-radx/hl7v2"
 )
 
 // seededPHI are patient values planted in the ORU and ADT fixtures below. No
