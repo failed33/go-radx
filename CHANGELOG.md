@@ -10,6 +10,8 @@ legacy codebase (`legacy-main`) and are not continued here.
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-08-28
+
 ### Changed
 
 - The DIMSE timeout (`WithDIMSETimeout`) is now a per-PDU idle bound instead of a single deadline
