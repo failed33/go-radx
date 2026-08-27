@@ -48,8 +48,6 @@ func (a *Association) Echo(ctx context.Context) (Status, error) {
 	conn := a.requestor.Conn()
 	m := a.requestor.Machine()
 
-	// Bound the request/response by the configured DIMSE timeout, so a peer that accepts the
-	// association then never sends the C-ECHO-RSP cannot block Echo indefinitely.
 	rq := CommandSet{
 		CommandField:        CommandCEchoRQ,
 		MessageID:           echoMessageID,

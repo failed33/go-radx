@@ -229,7 +229,7 @@ type AEOption func(*aeConfig)
 
 // Timeouts mirror pynetdicom defaults; all are also overridable per-association via context deadlines.
 func WithACSETimeout(d time.Duration) AEOption        // default 30s — association negotiation/release
-func WithDIMSETimeout(d time.Duration) AEOption       // default 30s — awaiting a DIMSE response
+func WithDIMSETimeout(d time.Duration) AEOption       // default 30s — per-PDU idle bound, both directions
 func WithNetworkTimeout(d time.Duration) AEOption     // default 60s — idle association
 func WithConnectionTimeout(d time.Duration) AEOption  // default none — TCP connect
 func WithMaxPDULength(n MaxPDULength) AEOption         // default 16382; 0 = unlimited (see negotiation)
@@ -244,6 +244,11 @@ func WithStoreHandler(h StoreHandler) AEOption
 // WithCommitmentHandler registers the sink for the Storage Commitment N-EVENT-REPORT result.
 func WithCommitmentHandler(h CommitmentHandler) AEOption
 ```
+
+`WithDIMSETimeout` bounds *silence*, never operation duration: every PDU read and write on an
+established association arms a fresh window and drops it on completion, on both the SCU and SCP
+sides. A multi-hour C-MOVE that keeps streaming never expires; a peer that stops sending for longer
+than the bound fails with `*TimeoutError` while the caller's own context is still live.
 
 ### Establishing an outbound association (SCU)
 
@@ -809,7 +814,19 @@ type ProtocolError struct {
 	Detail string
 }
 func (e *ProtocolError) Error() string
+
+// TimeoutError reports peer silence on an established association: no PDU in either direction for
+// Idle (the configured WithDIMSETimeout) while the caller's ctx was still live. The interrupted PDU
+// is half-framed, so the association must be discarded, not reused.
+type TimeoutError struct {
+	Idle time.Duration
+}
+func (e *TimeoutError) Error() string
 ```
+
+`TimeoutError` deliberately does **not** unwrap to `context.DeadlineExceeded`: a caller must be able
+to tell a stalled peer from its own cancellation or deadline without provenance guesswork. Operation
+identity is not carried on the error — it belongs to the caller's own wrapping.
 
 A DIMSE `Status` of `Failure` category is **not** an `error` by itself — it is data the caller inspects with
 `status.IsFailure()`. Transport, association, and protocol faults are `error`s. This separation lets a caller

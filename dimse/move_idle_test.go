@@ -62,7 +62,7 @@ func TestMoveOutlivesDIMSETimeoutWhileResponsesFlow(t *testing.T) {
 }
 
 // A peer that goes silent mid-stream (pendings, then nothing) must surface a typed
-// *TimeoutError naming the operation and the configured idle bound — not a bare
+// *TimeoutError carrying the configured idle bound — not a bare
 // context.DeadlineExceeded (which callers cannot tell from their own deadline), and not a
 // laundered Success.
 func TestMoveStalledPeerSurfacesTimeoutError(t *testing.T) {

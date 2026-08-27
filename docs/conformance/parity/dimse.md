@@ -169,7 +169,7 @@ functional options. Equivalence is judged on capability, not shape.
 | TLS for requestor (client) | `tls_args` / `ssl_context` | MET | `WithTLS` `dimse/ae.go:79-101`; dial path `association.go:308`; `dimse/tls_test.go` | - | TLS 1.2 floor enforced; verification on by default |
 | TLS for acceptor (server) | `ServerSocket` ssl_context | MET | Same `WithTLS` applied to listener (`dimse/ae.go:90` doc + `server.go`) | - | mTLS via `ClientAuth`+`ClientCAs` on the caller's config |
 | ACSE timeout | `AE.acse_timeout` | MET | `WithACSETimeout` `dimse/ae.go:42`; `acseContext` `association.go:363` | - | |
-| DIMSE timeout | `AE.dimse_timeout` | MET | `WithDIMSETimeout` `dimse/ae.go:47`; `dimseContext` `association.go:292` | - | |
+| DIMSE timeout | `AE.dimse_timeout` | MET | `WithDIMSETimeout` `dimse/ae.go:47`; per-PDU idle bound `dimse/dul/connection.go:40-48` (`SetIdleTimeout`) | - | Bounds peer silence, not operation duration |
 | Network timeout | `AE.network_timeout` | MET | `WithNetworkTimeout` `dimse/ae.go:52` | - | |
 | TCP connection timeout | `AE.connection_timeout` | MET | `WithConnectionTimeout` `dimse/ae.go:57` | - | |
 | Bind address / port selection | `start_server(("addr", port))` | MET | `ListenAndServe(ctx, addr)` `dimse/server.go:230`; `Addr()` `:473` | - | |

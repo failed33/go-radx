@@ -10,6 +10,30 @@ legacy codebase (`legacy-main`) and are not continued here.
 
 ## [Unreleased]
 
+### Changed
+
+- The DIMSE timeout (`WithDIMSETimeout`) is now a per-PDU idle bound instead of a single deadline
+  over a whole operation. It previously documented the pynetdicom/DCMTK semantic ("maximum wait for
+  a DIMSE response") but was applied as one absolute budget across an entire C-FIND/C-MOVE/C-GET
+  response loop, so any retrieval that legitimately streamed for longer than the timeout was cut
+  mid-transfer while the peer was actively sending. The idle clock now lives in `dul.Conn`
+  (`SetIdleTimeout`): every PDU read and write arms a fresh window and drops it on completion, in
+  both directions and on both the SCU and SCP sides, so the bound measures peer silence and never
+  operation duration or dataset size. `dimseContext`, `receiveMessageIdle`, and `readInbound`'s
+  private windowing are gone; operations and cancel drains run on the caller's context alone, with
+  the drains detached via `context.WithoutCancel` and idle-bounded like everything else — a flowing
+  post-cancel backlog drains cleanly, a stalled one ends in the same typed timeout.
+
+### Added
+
+- `dimse.TimeoutError` — an expiry of the idle bound with the caller's context still live now
+  surfaces as a typed error carrying the elapsed bound (`Idle`), reached via
+  `Association.LastError` on the query/retrieve iterators. It deliberately does not unwrap to
+  `context.DeadlineExceeded`, so a caller can tell a stalled peer from its own cancellation or
+  deadline without provenance guesswork; operation identity belongs to the caller's error wrapping
+  rather than the error itself. The association is left half-framed and must be discarded, not
+  reused.
+
 ## [0.11.0] - 2026-06-21
 
 ### Added
