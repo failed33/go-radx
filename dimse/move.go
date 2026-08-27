@@ -78,9 +78,6 @@ func (a *Association) Move(
 		conn := a.requestor.Conn()
 		m := a.requestor.Machine()
 
-		sendCtx, cancel := a.dimseContext(ctx)
-		defer cancel()
-
 		msgID := a.nextMessageID()
 		rq := CommandSet{
 			CommandField:        CommandCMoveRQ,
@@ -91,7 +88,7 @@ func (a *Association) Move(
 			MoveDestination:     dest,
 			CommandDataSetType:  CommandDataSetPresent,
 		}
-		if err := sendMessage(sendCtx, conn, m, pcID, rq, identifier, ts, a.sendCap()); err != nil {
+		if err := sendMessage(ctx, conn, m, pcID, rq, identifier, ts, a.sendCap()); err != nil {
 			a.setLastError(err)
 			yield(NewStatus(0xC000, svc), nil)
 			return
@@ -101,13 +98,13 @@ func (a *Association) Move(
 		// counts and yields with a nil dataset; the terminal yields last and ends iteration. An early
 		// break, or a ctx cancellation interrupting the read, sends a C-CANCEL-RQ for this operation's
 		// Message ID and drains the outstanding responses to the terminal, leaving the association
-		// clean for reuse. Each read gets a fresh DIMSE-timeout window: the timeout bounds peer
-		// silence between responses, never the retrieve's total duration (a large series streams
-		// pendings for minutes).
+		// clean for reuse. The connection's idle bound (Conn.SetIdleTimeout, from the DIMSE
+		// timeout) re-arms per PDU, so it bounds peer silence between responses, never the
+		// retrieve's total duration (a large series streams pendings for minutes).
 		for {
-			rsp, rspDS, _, err := a.receiveMessageIdle(ctx, "C-MOVE", conn, m, newMessageReassembler(ts))
+			rsp, rspDS, _, err := receiveMessage(ctx, conn, m, newMessageReassembler(ts))
 			if err != nil {
-				// A cancelled or expired PARENT ctx is the cancellation contract: send a C-CANCEL and
+				// A cancelled or expired ctx is the cancellation contract: send a C-CANCEL and
 				// drain. A silent peer is a *TimeoutError FAULT surfaced via LastError, never a
 				// silent end.
 				if (errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)) && ctx.Err() != nil {

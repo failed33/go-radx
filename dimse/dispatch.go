@@ -49,6 +49,11 @@ func dispatchAssociation(ctx context.Context, conn *dul.Conn, params acse.Accept
 	if err != nil {
 		return err
 	}
+	// networkTimeout is the data-transfer idle bound: armed only once negotiation is complete
+	// (the handshake stays governed solely by acseTimeout above), it bounds each PDU read and
+	// write for the association's lifetime — see Conn.SetIdleTimeout. That covers every serve
+	// path on this association, the release await-close read and outbound responses included.
+	conn.SetIdleTimeout(networkTimeout)
 	calling := AETitle(acc.CallingAETitle())
 	called := AETitle(acc.CalledAETitle())
 	resolveTS := acceptedTransferSyntaxResolver(acc)
@@ -57,7 +62,7 @@ func dispatchAssociation(ctx context.Context, conn *dul.Conn, params acse.Accept
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		cmd, ds, pcID, kind, err := readInbound(ctx, acc, networkTimeout, resolveTS)
+		cmd, ds, pcID, kind, err := readInbound(ctx, acc, resolveTS)
 		if err != nil {
 			return err
 		}
@@ -66,16 +71,9 @@ func dispatchAssociation(ctx context.Context, conn *dul.Conn, params acse.Accept
 			// CompleteRelease sends the A-RELEASE-RP then awaits the peer's orderly transport close (a
 			// final inbound read). A peer that sends A-RELEASE-RQ then HOLDS the TCP open would block
 			// that read forever, holding the capacity slot and goroutine until Shutdown — a
-			// slot-exhaustion DoS in the release phase (P1 adversarial review). Bound the await-close
-			// read by networkTimeout: it is an idle wait for the peer to close, the same idle-bound the
-			// post-negotiation reads use.
-			releaseCtx := ctx
-			if networkTimeout > 0 {
-				var cancel context.CancelFunc
-				releaseCtx, cancel = context.WithTimeout(ctx, networkTimeout)
-				defer cancel()
-			}
-			return acc.CompleteRelease(releaseCtx)
+			// slot-exhaustion DoS in the release phase (P1 adversarial review). The connection's idle
+			// bound covers that await-close read like every other read on this association.
+			return acc.CompleteRelease(ctx)
 		case inboundAborted, inboundClosed:
 			// The peer aborted or closed the transport in an orderly way; the association is over.
 			return conn.Close()
@@ -103,36 +101,23 @@ const (
 // A protocol violation surfaces as a typed error (DriveInbound has already sent the provider
 // A-ABORT); a clean io.EOF reports inboundClosed.
 //
-// When networkTimeout is positive it bounds EACH inbound PDU read individually — it is the AE's
-// IDLE-association bound, not a cap on the whole message. The timeout is derived fresh per read
-// (and cancelled immediately after that read returns), so an idle gap — no PDU for networkTimeout,
-// whether before the first PDU or stalled mid-reassembly — times out and the association ends,
-// while continuous progress resets the deadline. A legitimate large/slow C-STORE spanning many
-// P-DATA-TF PDUs over a total longer than networkTimeout therefore succeeds as long as each PDU
-// arrives within networkTimeout of the previous, rather than being aborted mid-transfer.
+// The connection's idle bound (Conn.SetIdleTimeout, armed from networkTimeout at association
+// establishment) bounds EACH inbound PDU read individually — it is the AE's IDLE-association
+// bound, not a cap on the whole message. An idle gap — no PDU for the bound, whether before the
+// first PDU or stalled mid-reassembly — times out and the association ends, while continuous
+// progress keeps re-arming it. A legitimate large/slow C-STORE spanning many P-DATA-TF PDUs over
+// a total longer than the bound therefore succeeds as long as each PDU arrives within the bound
+// of the previous, rather than being aborted mid-transfer.
 func readInbound(
 	ctx context.Context,
 	acc *acse.Acceptor,
-	networkTimeout time.Duration,
 	resolveTS func(pcID uint8) (dicom.TransferSyntax, error),
 ) (CommandSet, *dicom.DataSet, uint8, inboundKind, error) {
 	conn := acc.Conn()
 	m := acc.Machine()
 	r := newMessageReassemblerFunc(resolveTS)
 	for {
-		// Bound this single read by the idle timeout. The context is derived fresh per read and
-		// cancelled explicitly the moment DriveInbound returns (NOT deferred, which would accumulate
-		// one live timer per PDU across the reassembly loop), so the deadline tracks the gap since the
-		// last PDU, not the elapsed time of the whole message.
-		readCtx := ctx
-		var cancel context.CancelFunc
-		if networkTimeout > 0 {
-			readCtx, cancel = context.WithTimeout(ctx, networkTimeout)
-		}
-		p, _, err := dul.DriveInbound(readCtx, conn, m)
-		if cancel != nil {
-			cancel()
-		}
+		p, _, err := dul.DriveInbound(ctx, conn, m)
 		if err != nil {
 			if errors.Is(err, io.EOF) {
 				return CommandSet{}, nil, 0, inboundClosed, nil

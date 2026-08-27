@@ -66,9 +66,6 @@ func (a *Association) NGet(ctx context.Context, sopClassUID dicom.SOPClassUID, i
 
 	conn := a.requestor.Conn()
 	machine := a.requestor.Machine()
-	opCtx, cancel := a.dimseContext(ctx)
-	defer cancel()
-
 	rq := CommandSet{
 		CommandField:            CommandNGetRQ,
 		MessageID:               a.nextMessageID(),
@@ -78,11 +75,11 @@ func (a *Association) NGet(ctx context.Context, sopClassUID dicom.SOPClassUID, i
 		// An N-GET-RQ carries no data set: the requested attributes are named in the command set.
 		CommandDataSetType: CommandDataSetNotPresent,
 	}
-	if err := sendCommand(opCtx, conn, machine, pcID, rq); err != nil {
+	if err := sendCommand(ctx, conn, machine, pcID, rq); err != nil {
 		return NGetResult{}, err
 	}
 
-	rsp, ds, _, err := receiveMessage(opCtx, conn, machine, newMessageReassembler(ts))
+	rsp, ds, _, err := receiveMessage(ctx, conn, machine, newMessageReassembler(ts))
 	if err != nil {
 		return NGetResult{}, err
 	}

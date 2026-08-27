@@ -43,15 +43,21 @@ func WithACSETimeout(d time.Duration) AEOption {
 	return func(c *aeConfig) { c.acseTimeout = d }
 }
 
-// WithDIMSETimeout sets the maximum silence awaiting a single DIMSE message (default 30s).
-// The timer re-arms on every message of a multi-response operation (C-FIND, C-MOVE, C-GET),
-// so it bounds peer inactivity — never an operation's total duration. An expiry with the
-// caller's ctx still live surfaces as a *TimeoutError via Association.LastError.
+// WithDIMSETimeout sets the SCU-side data-transfer idle bound (default 30s): the maximum
+// silence between PDUs on an established association, in either direction. The bound
+// re-arms on every PDU (Conn.SetIdleTimeout), so it measures peer inactivity — never an
+// operation's total duration nor a message's size: a C-MOVE streaming responses for
+// minutes, or a large dataset mid-reassembly, keeps re-arming it. An expiry with the
+// caller's ctx still live surfaces as a *TimeoutError (via Association.LastError on the
+// query/retrieve iterators), after which the association must be discarded. Zero disables
+// the bound. Association negotiation is governed by WithACSETimeout, not this.
 func WithDIMSETimeout(d time.Duration) AEOption {
 	return func(c *aeConfig) { c.dimseTimeout = d }
 }
 
-// WithNetworkTimeout sets the idle-association timeout (default 60s).
+// WithNetworkTimeout sets the SCP-side data-transfer idle bound (default 60s): the
+// server-side counterpart of WithDIMSETimeout, armed on accepted associations once
+// negotiation completes and re-armed per PDU. Zero disables the bound.
 func WithNetworkTimeout(d time.Duration) AEOption {
 	return func(c *aeConfig) { c.networkTimeout = d }
 }

@@ -50,20 +50,17 @@ func (a *Association) Echo(ctx context.Context) (Status, error) {
 
 	// Bound the request/response by the configured DIMSE timeout, so a peer that accepts the
 	// association then never sends the C-ECHO-RSP cannot block Echo indefinitely.
-	opCtx, cancel := a.dimseContext(ctx)
-	defer cancel()
-
 	rq := CommandSet{
 		CommandField:        CommandCEchoRQ,
 		MessageID:           echoMessageID,
 		AffectedSOPClassUID: dicom.UID(verificationSOPClass),
 		CommandDataSetType:  CommandDataSetNotPresent,
 	}
-	if err := sendCommand(opCtx, conn, m, pcID, rq); err != nil {
+	if err := sendCommand(ctx, conn, m, pcID, rq); err != nil {
 		return Status{}, err
 	}
 
-	rsp, _, err := receiveCommand(opCtx, conn, m)
+	rsp, _, err := receiveCommand(ctx, conn, m)
 	if err != nil {
 		return Status{}, err
 	}

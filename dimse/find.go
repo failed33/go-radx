@@ -148,9 +148,6 @@ func (a *Association) Find(
 		conn := a.requestor.Conn()
 		m := a.requestor.Machine()
 
-		sendCtx, cancel := a.dimseContext(ctx)
-		defer cancel()
-
 		msgID := a.nextMessageID()
 		rq := CommandSet{
 			CommandField:        CommandCFindRQ,
@@ -160,7 +157,7 @@ func (a *Association) Find(
 			Priority:            cfg.priority,
 			CommandDataSetType:  CommandDataSetPresent,
 		}
-		if err := sendMessage(sendCtx, conn, m, pcID, rq, identifier, ts, a.sendCap()); err != nil {
+		if err := sendMessage(ctx, conn, m, pcID, rq, identifier, ts, a.sendCap()); err != nil {
 			a.setLastError(err)
 			yield(NewStatus(0xC000, svc), nil)
 			return
@@ -171,16 +168,16 @@ func (a *Association) Find(
 		// interrupting the read, sends a C-CANCEL-RQ for this operation's Message ID and then drains
 		// the outstanding responses through to the terminal status, so the association is left clean
 		// for reuse (the SCP keeps sending queued Pendings plus a terminal after the cancel — they
-		// must not corrupt the next operation). Each read gets a fresh DIMSE-timeout window: the
-		// timeout bounds peer silence between responses, never the query's total duration.
+		// must not corrupt the next operation). The connection's idle bound (from the DIMSE
+		// timeout) re-arms per PDU, so it bounds peer silence between responses, never the
+		// query's total duration.
 		for {
-			rsp, ds, _, err := a.receiveMessageIdle(ctx, "C-FIND", conn, m, newMessageReassembler(ts))
+			rsp, ds, _, err := receiveMessage(ctx, conn, m, newMessageReassembler(ts))
 			if err != nil {
-				// Distinguish caller cancellation from the internal DIMSE timeout. A cancelled or
-				// expired PARENT ctx is the cancellation contract: send a C-CANCEL and drain, then
-				// end promptly (PRD §9.4). A silent peer is a *TimeoutError FAULT surfaced via
-				// LastError, never a silent end — otherwise a stalled C-FIND would finish with
-				// neither a terminal status nor an error.
+				// A cancelled or expired ctx is the cancellation contract: send a C-CANCEL and
+				// drain, then end promptly (PRD §9.4). A silent peer is a *TimeoutError FAULT
+				// surfaced via LastError, never a silent end — otherwise a stalled C-FIND would
+				// finish with neither a terminal status nor an error.
 				if (errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)) && ctx.Err() != nil {
 					a.cancelOperation(ctx, conn, m, pcID, ts, msgID, svc, CommandCFindRSP)
 					return
@@ -341,16 +338,21 @@ func (a *Association) drainToTerminal(ctx context.Context, conn *dul.Conn, m *du
 	}
 }
 
-// cancelContext derives a short, fresh context for a best-effort C-CANCEL send. It does NOT inherit
-// the operation's (possibly already-cancelled) ctx, so the cancel can still be written when the
-// caller cancelled ctx to trigger it; it is bounded by the DIMSE timeout, defaulting to a short
-// fixed bound when none is configured.
-func (a *Association) cancelContext(context.Context) (context.Context, context.CancelFunc) {
-	d := a.dimseTimeout
-	if d <= 0 {
-		d = 5 * time.Second
+// cancelContext derives the context for a best-effort C-CANCEL send and its drain. It does NOT
+// inherit the operation ctx's cancellation (that ctx is typically already cancelled — it is what
+// triggered the C-CANCEL), while keeping its values. The drain has no absolute bound: it does
+// useful protocol work for as long as the peer keeps sending (leaving the association clean for
+// reuse), and the connection's per-PDU idle bound ends it the moment the peer goes silent. A
+// caller that wants a cancelled operation to return faster than the peer drains must abort the
+// association instead of iterating politely. Only when no DIMSE timeout is configured (idle
+// bound disabled) does a fixed window bound the drain, so it cannot hang forever on a silent
+// peer with no liveness bound at all.
+func (a *Association) cancelContext(ctx context.Context) (context.Context, context.CancelFunc) {
+	detached := context.WithoutCancel(ctx)
+	if a.dimseTimeout <= 0 {
+		return context.WithTimeout(detached, 5*time.Second)
 	}
-	return context.WithTimeout(context.Background(), d)
+	return detached, func() {}
 }
 
 // Cancel sends a C-CANCEL-RQ for an in-flight operation identified by its Message ID, on the first

@@ -113,9 +113,6 @@ func (m *MPPS) Create(ctx context.Context, attrs *dicom.DataSet) (dicom.UID, Sta
 
 	conn := a.requestor.Conn()
 	machine := a.requestor.Machine()
-	opCtx, cancel := a.dimseContext(ctx)
-	defer cancel()
-
 	rq := CommandSet{
 		CommandField:        CommandNCreateRQ,
 		MessageID:           a.nextMessageID(),
@@ -125,11 +122,11 @@ func (m *MPPS) Create(ctx context.Context, attrs *dicom.DataSet) (dicom.UID, Sta
 	if suppliedUID != "" {
 		rq.AffectedSOPInstanceUID = dicom.UID(suppliedUID)
 	}
-	if err := sendMessage(opCtx, conn, machine, pcID, rq, step, ts, a.sendCap()); err != nil {
+	if err := sendMessage(ctx, conn, machine, pcID, rq, step, ts, a.sendCap()); err != nil {
 		return "", Status{}, err
 	}
 
-	rsp, _, _, err := receiveMessage(opCtx, conn, machine, newMessageReassembler(ts))
+	rsp, _, _, err := receiveMessage(ctx, conn, machine, newMessageReassembler(ts))
 	if err != nil {
 		return "", Status{}, err
 	}
@@ -194,9 +191,6 @@ func (m *MPPS) Set(ctx context.Context, instanceUID dicom.UID, attrs *dicom.Data
 
 	conn := a.requestor.Conn()
 	machine := a.requestor.Machine()
-	opCtx, cancel := a.dimseContext(ctx)
-	defer cancel()
-
 	rq := CommandSet{
 		CommandField:            CommandNSetRQ,
 		MessageID:               a.nextMessageID(),
@@ -204,11 +198,11 @@ func (m *MPPS) Set(ctx context.Context, instanceUID dicom.UID, attrs *dicom.Data
 		RequestedSOPInstanceUID: instanceUID,
 		CommandDataSetType:      CommandDataSetPresent,
 	}
-	if err := sendMessage(opCtx, conn, machine, pcID, rq, attrs, ts, a.sendCap()); err != nil {
+	if err := sendMessage(ctx, conn, machine, pcID, rq, attrs, ts, a.sendCap()); err != nil {
 		return Status{}, err
 	}
 
-	rsp, _, _, err := receiveMessage(opCtx, conn, machine, newMessageReassembler(ts))
+	rsp, _, _, err := receiveMessage(ctx, conn, machine, newMessageReassembler(ts))
 	if err != nil {
 		return Status{}, err
 	}

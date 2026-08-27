@@ -72,20 +72,21 @@ func (e *AbortError) Error() string {
 	return fmt.Sprintf("dimse: %s (source %d, reason %d)", kind, e.Source, e.Reason)
 }
 
-// TimeoutError reports that the association's DIMSE timeout expired while awaiting the next
-// DIMSE message of an in-flight operation: the peer stayed silent for longer than the
-// configured WithDIMSETimeout while the caller's ctx was still live. It is distinct from the
-// caller's own cancellation or deadline (the ctx cancellation contract) and from a transport
-// fault (AbortError, ProtocolError) — the timer is the SCU's, and the connection may still be
-// intact. It deliberately does not unwrap to context.DeadlineExceeded: conflating the two is
-// what forces callers into provenance guesswork.
+// TimeoutError reports that the association's DIMSE timeout expired mid-conversation: no
+// PDU-level transport progress with the peer for Idle (the configured WithDIMSETimeout),
+// with the caller's ctx still live. The bound re-arms on every PDU in both directions, so
+// it can only fire on true peer silence — never on a long operation or a large dataset that
+// is still flowing. It is distinct from the caller's own cancellation or deadline (the ctx
+// cancellation contract) and from a transport fault (AbortError, ProtocolError); it
+// deliberately does not unwrap to context.DeadlineExceeded, because conflating the two is
+// what forces callers into provenance guesswork. The interrupted PDU is half-framed, so the
+// association is no longer usable and must be discarded, not reused.
 type TimeoutError struct {
-	Op   string        // the DIMSE service that was awaiting a message, e.g. "C-MOVE"
 	Idle time.Duration // the configured maximum silence that elapsed
 }
 
 func (e *TimeoutError) Error() string {
-	return fmt.Sprintf("dimse: %s: no DIMSE message from the peer within %s", e.Op, e.Idle)
+	return fmt.Sprintf("dimse: no PDU exchanged with the peer within %s", e.Idle)
 }
 
 // ProtocolError reports a malformed PDU, a length-limit violation, or an unexpected PDU for

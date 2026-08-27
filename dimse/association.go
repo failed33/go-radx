@@ -40,7 +40,10 @@ type Association struct {
 	// extended negotiation reads the acceptor's negotiated service-class application information here.
 	extendedNegotiations       []ExtendedNegotiation
 	commonExtendedNegotiations []CommonExtendedNegotiation
-	dimseTimeout               time.Duration
+	// dimseTimeout mirrors the connection's idle bound (Conn.SetIdleTimeout); the association
+	// keeps it only to know whether a liveness bound exists at all — cancelContext falls back
+	// to a fixed drain window when it is disabled.
+	dimseTimeout time.Duration
 	// localMaxPDULength is the maximum PDU length this AE advertised; peerMaxPDULength is the one
 	// the peer advertised in its A-ASSOCIATE-AC. A C-STORE is fragmented so every P-DATA-TF stays
 	// within both limits (MaxPDULength.SendCap), and an unlimited peer max (0) resolves to the
@@ -271,6 +274,10 @@ func (ae *AE) Associate(
 		_ = conn.Close()
 		return nil, translateAssociateError(err)
 	}
+	// The DIMSE timeout is the data-transfer idle bound: armed only once negotiation is
+	// complete (the handshake stays governed solely by the ACSE timeout above), it bounds
+	// each PDU read and write for the association's lifetime — see Conn.SetIdleTimeout.
+	conn.SetIdleTimeout(ae.cfg.dimseTimeout)
 	return &Association{
 		requestor:                  requestor,
 		accepted:                   fromPDUContextsAC(contexts, requestor.AcceptedContexts()),
@@ -283,42 +290,6 @@ func (ae *AE) Associate(
 		localMaxPDULength:          ae.cfg.maxPDULength,
 		peerMaxPDULength:           MaxPDULength(requestor.PeerMaxPDULength()),
 	}, nil
-}
-
-// dimseContext derives a single-message context, applying the association's DIMSE timeout
-// when the caller's context has no earlier deadline. It mirrors AE.acseContext for the
-// data-transfer phase, so a peer that accepts the association and then never answers a DIMSE
-// request cannot block the operation indefinitely (the configured WithDIMSETimeout promise).
-// The window bounds ONE send or receive, never a whole multi-response operation: iterating
-// services re-derive it per message via receiveMessageIdle, so the timeout is an idle bound
-// on peer silence (the pynetdicom/DCMTK dimse-timeout semantic), not an operation budget.
-func (a *Association) dimseContext(ctx context.Context) (context.Context, context.CancelFunc) {
-	if a.dimseTimeout <= 0 {
-		return ctx, func() {}
-	}
-	return context.WithTimeout(ctx, a.dimseTimeout)
-}
-
-// receiveMessageIdle reads the next DIMSE message under a fresh DIMSE-timeout window. The
-// window re-arms on every message, so the configured WithDIMSETimeout bounds the peer's
-// SILENCE between messages — never an operation's total duration: a C-MOVE or C-FIND that
-// streams responses for many minutes must not expire while progress is flowing. An expiry
-// with the caller's ctx still live is returned as a typed *TimeoutError naming op, so a
-// caller can tell a stalled peer from its own cancellation without inspecting ctx provenance.
-func (a *Association) receiveMessageIdle(
-	ctx context.Context,
-	op string,
-	conn *dul.Conn,
-	m *dul.StateMachine,
-	r *messageReassembler,
-) (CommandSet, *dicom.DataSet, uint8, error) {
-	rcvCtx, cancel := a.dimseContext(ctx)
-	defer cancel()
-	cmd, ds, pcID, err := receiveMessage(rcvCtx, conn, m, r)
-	if err != nil && errors.Is(err, context.DeadlineExceeded) && ctx.Err() == nil {
-		err = &TimeoutError{Op: op, Idle: a.dimseTimeout}
-	}
-	return cmd, ds, pcID, err
 }
 
 // dial opens the connection to addr, honouring the AE's connection timeout (when set) and ctx

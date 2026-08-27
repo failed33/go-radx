@@ -276,6 +276,12 @@ func sendMessage(ctx context.Context, conn *dul.Conn, m *dul.StateMachine, pcID 
 			return wrapStateError(m, serr)
 		}
 		if err := conn.WritePDU(ctx, p); err != nil {
+			// A peer that stops reading our writes is the same silence as one that stops
+			// sending; surface the connection's idle expiry as the same typed timeout.
+			var idleErr *dul.IdleTimeoutError
+			if errors.As(err, &idleErr) {
+				return &TimeoutError{Idle: idleErr.Idle}
+			}
 			return err
 		}
 	}
@@ -321,6 +327,10 @@ func receiveMessage(ctx context.Context, conn *dul.Conn, m *dul.StateMachine, r 
 func translateInboundError(m *dul.StateMachine, err error) error {
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return err
+	}
+	var idleErr *dul.IdleTimeoutError
+	if errors.As(err, &idleErr) {
+		return &TimeoutError{Idle: idleErr.Idle}
 	}
 	var se *dul.StateError
 	if errors.As(err, &se) {

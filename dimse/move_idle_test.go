@@ -78,7 +78,7 @@ func TestMoveStalledPeerSurfacesTimeoutError(t *testing.T) {
 
 	var sawSuccess bool
 	var terminalSeen bool
-	for status, _ := range assoc.Move(ctx, nil, QueryLevelStudy, AETitle("STORESCP")) {
+	for status := range assoc.Move(ctx, nil, QueryLevelStudy, AETitle("STORESCP")) {
 		if status.IsPending() {
 			continue
 		}
@@ -97,13 +97,56 @@ func TestMoveStalledPeerSurfacesTimeoutError(t *testing.T) {
 	if !errors.As(assoc.LastError(), &te) {
 		t.Fatalf("LastError() = %v (%T), want *TimeoutError", assoc.LastError(), assoc.LastError())
 	}
-	if te.Op != "C-MOVE" {
-		t.Errorf("TimeoutError.Op = %q, want %q", te.Op, "C-MOVE")
-	}
 	if te.Idle != idle {
 		t.Errorf("TimeoutError.Idle = %v, want %v", te.Idle, idle)
 	}
 	if errors.Is(assoc.LastError(), context.DeadlineExceeded) {
 		t.Error("TimeoutError must not unwrap to context.DeadlineExceeded; that conflation is the bug")
+	}
+}
+
+// An early break (the cancellation contract) triggers a C-CANCEL plus a drain of the peer's
+// already-queued responses. The drain must ride the same idle discipline as the operation:
+// a backlog that takes longer than one idle window to arrive, but keeps flowing, drains
+// cleanly to the terminal and leaves no fault behind.
+func TestCancelDrainOutlivesIdleWindowWhileResponsesFlow(t *testing.T) {
+	responses := []moveResponse{
+		{status: 0xFF00, remaining: 5, delay: 50 * time.Millisecond},
+		{status: 0xFF00, remaining: 4, delay: 200 * time.Millisecond},
+		{status: 0xFF00, remaining: 3, delay: 200 * time.Millisecond},
+		{status: 0xFF00, remaining: 2, delay: 200 * time.Millisecond},
+		{status: 0xFF00, remaining: 1, delay: 200 * time.Millisecond},
+		{status: 0x0000, remaining: 0, completed: 5, delay: 200 * time.Millisecond},
+	}
+	addr, _ := startMoveSCP(t, responses)
+	assoc, ctx, cancel := dialMoveSCUWithTimeout(t, addr, 300*time.Millisecond)
+	defer cancel()
+
+	for range assoc.Move(ctx, nil, QueryLevelStudy, AETitle("STORESCP")) {
+		break // first Pending: break out, triggering C-CANCEL + drain of the remaining backlog
+	}
+	if err := assoc.LastError(); err != nil {
+		t.Fatalf("LastError() = %v; a flowing drain longer than one idle window must complete cleanly", err)
+	}
+}
+
+// A drain whose peer goes silent before the terminal must end via the same typed
+// *TimeoutError as the operation itself — never hang, and never a bare context error.
+func TestCancelDrainStalledPeerSurfacesTimeoutError(t *testing.T) {
+	responses := []moveResponse{
+		{status: 0xFF00, remaining: 2, delay: 50 * time.Millisecond},
+		{status: 0xFF00, remaining: 1, delay: 50 * time.Millisecond},
+		// No terminal: the peer stalls mid-drain.
+	}
+	addr, _ := startMoveSCP(t, responses)
+	assoc, ctx, cancel := dialMoveSCUWithTimeout(t, addr, 300*time.Millisecond)
+	defer cancel()
+
+	for range assoc.Move(ctx, nil, QueryLevelStudy, AETitle("STORESCP")) {
+		break // break on the first Pending; the drain then meets silence
+	}
+	var te *TimeoutError
+	if !errors.As(assoc.LastError(), &te) {
+		t.Fatalf("LastError() = %v (%T), want *TimeoutError from the stalled drain", assoc.LastError(), assoc.LastError())
 	}
 }
