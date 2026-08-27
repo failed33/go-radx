@@ -78,7 +78,7 @@ func (a *Association) Move(
 		conn := a.requestor.Conn()
 		m := a.requestor.Machine()
 
-		opCtx, cancel := a.dimseContext(ctx)
+		sendCtx, cancel := a.dimseContext(ctx)
 		defer cancel()
 
 		msgID := a.nextMessageID()
@@ -91,7 +91,7 @@ func (a *Association) Move(
 			MoveDestination:     dest,
 			CommandDataSetType:  CommandDataSetPresent,
 		}
-		if err := sendMessage(opCtx, conn, m, pcID, rq, identifier, ts, a.sendCap()); err != nil {
+		if err := sendMessage(sendCtx, conn, m, pcID, rq, identifier, ts, a.sendCap()); err != nil {
 			a.setLastError(err)
 			yield(NewStatus(0xC000, svc), nil)
 			return
@@ -101,13 +101,15 @@ func (a *Association) Move(
 		// counts and yields with a nil dataset; the terminal yields last and ends iteration. An early
 		// break, or a ctx cancellation interrupting the read, sends a C-CANCEL-RQ for this operation's
 		// Message ID and drains the outstanding responses to the terminal, leaving the association
-		// clean for reuse.
+		// clean for reuse. Each read gets a fresh DIMSE-timeout window: the timeout bounds peer
+		// silence between responses, never the retrieve's total duration (a large series streams
+		// pendings for minutes).
 		for {
-			rsp, rspDS, _, err := receiveMessage(opCtx, conn, m, newMessageReassembler(ts))
+			rsp, rspDS, _, err := a.receiveMessageIdle(ctx, "C-MOVE", conn, m, newMessageReassembler(ts))
 			if err != nil {
 				// A cancelled or expired PARENT ctx is the cancellation contract: send a C-CANCEL and
-				// drain. A deadline that fired only on opCtx (the DIMSE timeout, parent still live) is a
-				// stalled-peer FAULT surfaced via LastError, never a silent end.
+				// drain. A silent peer is a *TimeoutError FAULT surfaced via LastError, never a
+				// silent end.
 				if (errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)) && ctx.Err() != nil {
 					a.cancelOperation(ctx, conn, m, pcID, ts, msgID, svc, CommandCMoveRSP)
 					return

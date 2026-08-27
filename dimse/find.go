@@ -148,7 +148,7 @@ func (a *Association) Find(
 		conn := a.requestor.Conn()
 		m := a.requestor.Machine()
 
-		opCtx, cancel := a.dimseContext(ctx)
+		sendCtx, cancel := a.dimseContext(ctx)
 		defer cancel()
 
 		msgID := a.nextMessageID()
@@ -160,7 +160,7 @@ func (a *Association) Find(
 			Priority:            cfg.priority,
 			CommandDataSetType:  CommandDataSetPresent,
 		}
-		if err := sendMessage(opCtx, conn, m, pcID, rq, identifier, ts, a.sendCap()); err != nil {
+		if err := sendMessage(sendCtx, conn, m, pcID, rq, identifier, ts, a.sendCap()); err != nil {
 			a.setLastError(err)
 			yield(NewStatus(0xC000, svc), nil)
 			return
@@ -171,15 +171,15 @@ func (a *Association) Find(
 		// interrupting the read, sends a C-CANCEL-RQ for this operation's Message ID and then drains
 		// the outstanding responses through to the terminal status, so the association is left clean
 		// for reuse (the SCP keeps sending queued Pendings plus a terminal after the cancel — they
-		// must not corrupt the next operation).
+		// must not corrupt the next operation). Each read gets a fresh DIMSE-timeout window: the
+		// timeout bounds peer silence between responses, never the query's total duration.
 		for {
-			rsp, ds, _, err := receiveMessage(opCtx, conn, m, newMessageReassembler(ts))
+			rsp, ds, _, err := a.receiveMessageIdle(ctx, "C-FIND", conn, m, newMessageReassembler(ts))
 			if err != nil {
 				// Distinguish caller cancellation from the internal DIMSE timeout. A cancelled or
 				// expired PARENT ctx is the cancellation contract: send a C-CANCEL and drain, then
-				// end promptly (PRD §9.4). A deadline that fired only on opCtx (the association's
-				// DIMSE timeout, with the parent ctx still live) is a stalled-peer FAULT surfaced
-				// via LastError, never a silent end — otherwise a stalled C-FIND would finish with
+				// end promptly (PRD §9.4). A silent peer is a *TimeoutError FAULT surfaced via
+				// LastError, never a silent end — otherwise a stalled C-FIND would finish with
 				// neither a terminal status nor an error.
 				if (errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)) && ctx.Err() != nil {
 					a.cancelOperation(ctx, conn, m, pcID, ts, msgID, svc, CommandCFindRSP)

@@ -82,7 +82,7 @@ func (a *Association) Get(
 		conn := a.requestor.Conn()
 		m := a.requestor.Machine()
 
-		opCtx, cancel := a.dimseContext(ctx)
+		sendCtx, cancel := a.dimseContext(ctx)
 		defer cancel()
 
 		msgID := a.nextMessageID()
@@ -94,7 +94,7 @@ func (a *Association) Get(
 			Priority:            cfg.priority,
 			CommandDataSetType:  CommandDataSetPresent,
 		}
-		if err := sendMessage(opCtx, conn, m, pcID, rq, identifier, ts, a.sendCap()); err != nil {
+		if err := sendMessage(sendCtx, conn, m, pcID, rq, identifier, ts, a.sendCap()); err != nil {
 			a.setLastError(err)
 			yield(NewStatus(0xC000, svc), nil)
 			return
@@ -106,8 +106,10 @@ func (a *Association) Get(
 		// the counts and yield nil; the terminal yields last and ends iteration). An early break, or a
 		// ctx cancellation interrupting a read, sends a C-CANCEL-RQ for this operation's Message ID and
 		// drains the outstanding responses to the terminal, leaving the association clean for reuse.
+		// Each read gets a fresh DIMSE-timeout window: the timeout bounds peer silence between
+		// messages, never the retrieve's total duration (a large series streams for minutes).
 		for {
-			rsp, rspDS, inPCID, err := receiveMessage(opCtx, conn, m, newMessageReassemblerFunc(a.scuTransferSyntaxResolver()))
+			rsp, rspDS, inPCID, err := a.receiveMessageIdle(ctx, "C-GET", conn, m, newMessageReassemblerFunc(a.scuTransferSyntaxResolver()))
 			if err != nil {
 				if (errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)) && ctx.Err() != nil {
 					a.cancelGetOperation(ctx, conn, m, pcID, ts, msgID, store)
@@ -124,7 +126,12 @@ func (a *Association) Get(
 			// each sub-operation, else the SCP wedges awaiting the response). A store fault on the wire
 			// ends the retrieve via LastError.
 			if rsp.CommandField == CommandCStoreRQ {
-				if serr := a.answerGetSubOperation(opCtx, conn, m, store, rsp, rspDS, inPCID); serr != nil {
+				// The C-STORE-RSP answer rides its own fresh window for the same reason the reads
+				// do: the send must not be bounded by a budget that started at the C-GET-RQ.
+				storeCtx, storeCancel := a.dimseContext(ctx)
+				serr := a.answerGetSubOperation(storeCtx, conn, m, store, rsp, rspDS, inPCID)
+				storeCancel()
+				if serr != nil {
 					a.setLastError(serr)
 					yield(NewStatus(0xC000, svc), nil)
 					return

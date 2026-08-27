@@ -25,6 +25,9 @@ type moveResponse struct {
 	warning       uint16
 	omitRemaining bool
 	identifier    *dicom.DataSet
+	// delay pauses before sending this response, to model a peer whose responses arrive
+	// spaced out (the idle-timeout tests depend on controlling the inter-response gap).
+	delay time.Duration
 }
 
 // moveSCPObservation is what the mock C-MOVE SCP captured from the SCU's request.
@@ -115,6 +118,9 @@ func serveCannedMove(ctx context.Context, acc *acse.Acceptor, responses []moveRe
 	obs.mu.Unlock()
 
 	for _, r := range responses {
+		if r.delay > 0 {
+			time.Sleep(r.delay)
+		}
 		rsp := CommandSet{
 			CommandField:              CommandCMoveRSP,
 			MessageIDBeingRespondedTo: rqCmd.MessageID,

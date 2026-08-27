@@ -43,7 +43,10 @@ func WithACSETimeout(d time.Duration) AEOption {
 	return func(c *aeConfig) { c.acseTimeout = d }
 }
 
-// WithDIMSETimeout sets the timeout awaiting a DIMSE response (default 30s).
+// WithDIMSETimeout sets the maximum silence awaiting a single DIMSE message (default 30s).
+// The timer re-arms on every message of a multi-response operation (C-FIND, C-MOVE, C-GET),
+// so it bounds peer inactivity — never an operation's total duration. An expiry with the
+// caller's ctx still live surfaces as a *TimeoutError via Association.LastError.
 func WithDIMSETimeout(d time.Duration) AEOption {
 	return func(c *aeConfig) { c.dimseTimeout = d }
 }

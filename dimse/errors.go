@@ -1,6 +1,9 @@
 package dimse
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 // AssociationErrorKind classifies a failed or refused association.
 type AssociationErrorKind uint8
@@ -67,6 +70,22 @@ func (e *AbortError) Error() string {
 		kind = "A-P-ABORT"
 	}
 	return fmt.Sprintf("dimse: %s (source %d, reason %d)", kind, e.Source, e.Reason)
+}
+
+// TimeoutError reports that the association's DIMSE timeout expired while awaiting the next
+// DIMSE message of an in-flight operation: the peer stayed silent for longer than the
+// configured WithDIMSETimeout while the caller's ctx was still live. It is distinct from the
+// caller's own cancellation or deadline (the ctx cancellation contract) and from a transport
+// fault (AbortError, ProtocolError) — the timer is the SCU's, and the connection may still be
+// intact. It deliberately does not unwrap to context.DeadlineExceeded: conflating the two is
+// what forces callers into provenance guesswork.
+type TimeoutError struct {
+	Op   string        // the DIMSE service that was awaiting a message, e.g. "C-MOVE"
+	Idle time.Duration // the configured maximum silence that elapsed
+}
+
+func (e *TimeoutError) Error() string {
+	return fmt.Sprintf("dimse: %s: no DIMSE message from the peer within %s", e.Op, e.Idle)
 }
 
 // ProtocolError reports a malformed PDU, a length-limit violation, or an unexpected PDU for
