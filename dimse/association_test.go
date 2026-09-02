@@ -128,6 +128,24 @@ func TestOperationOnReleasedAssociationReturnsTypedError(t *testing.T) {
 	}
 }
 
+func TestTranslateAssociationRejectionPreservesResult(t *testing.T) {
+	err := translateAssociateError(&acse.RejectedError{Result: 2, Source: 3, Reason: 2})
+	var associationErr *AssociationError
+	if !errors.As(err, &associationErr) {
+		t.Fatalf("error = %T, want *AssociationError", err)
+	}
+	if associationErr.Result != 2 || associationErr.Source != 3 || associationErr.Reason != 2 {
+		t.Fatalf("association rejection = %+v", associationErr)
+	}
+}
+
+func TestTranslateAssociationTimeoutPreservesContextCause(t *testing.T) {
+	err := translateAssociateError(context.DeadlineExceeded)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("error = %v, want context deadline in error chain", err)
+	}
+}
+
 // TestOperationOnUnestablishedAssociationReturnsTypedError is the other half of DIMSE-017:
 // a zero-value/unestablished Association returns a typed error, never panics.
 func TestOperationOnUnestablishedAssociationReturnsTypedError(t *testing.T) {

@@ -2,10 +2,15 @@ package dimse
 
 import (
 	"bytes"
+	"context"
 	"errors"
+	"net"
 	"testing"
+	"time"
 
 	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/acse"
+	"github.com/failed33/go-radx/dimse/dul"
 	"github.com/failed33/go-radx/dimse/pdu"
 )
 
@@ -26,6 +31,73 @@ func collectPDVs(pdus []*pdu.DataTF) []pdu.PresentationDataValue {
 		items = append(items, p.Items...)
 	}
 	return items
+}
+
+func TestReceiveMessageCompletesPeerRelease(t *testing.T) {
+	client, server := net.Pipe()
+	t.Cleanup(func() { client.Close(); server.Close() })
+	requestConn := dul.NewConn(client, 0)
+	acceptConn := dul.NewConn(server, 0)
+	ctx, cancel := context.WithTimeout(t.Context(), time.Second)
+	defer cancel()
+
+	accepted := make(chan *acse.Acceptor, 1)
+	go func() {
+		acceptor, _ := acse.Accept(ctx, acceptConn, acse.AcceptParams{
+			CalledAETitle: "ACCEPTOR",
+			MaxPDULength:  16382,
+			Supported: []acse.SupportedContext{{
+				AbstractSyntax:   string(verificationSOPClass),
+				TransferSyntaxes: []string{string(dicom.ImplicitVRLittleEndian)},
+			}},
+		})
+		accepted <- acceptor
+	}()
+	requestor, err := acse.Associate(ctx, requestConn, acse.Request{
+		CalledAETitle: "ACCEPTOR", CallingAETitle: "REQUESTOR", MaxPDULength: 16382,
+		Contexts: []pdu.PresentationContextRQ{{
+			ID: 1, AbstractSyntax: string(verificationSOPClass),
+			TransferSyntaxes: []string{string(dicom.ImplicitVRLittleEndian)},
+		}},
+	})
+	if err != nil {
+		t.Fatalf("Associate: %v", err)
+	}
+	acceptor := <-accepted
+	if acceptor == nil {
+		t.Fatal("Accept failed")
+	}
+
+	peerDone := make(chan error, 1)
+	go func() {
+		if _, _, applyErr := acceptor.Machine().Apply(dul.Evt11); applyErr != nil {
+			peerDone <- applyErr
+			return
+		}
+		if writeErr := acceptor.Conn().WritePDU(ctx, &pdu.ReleaseRQ{}); writeErr != nil {
+			peerDone <- writeErr
+			return
+		}
+		response, _, readErr := dul.DriveInbound(ctx, acceptor.Conn(), acceptor.Machine())
+		if readErr == nil {
+			_, ok := response.(*pdu.ReleaseRP)
+			if !ok {
+				readErr = errors.New("peer did not receive A-RELEASE-RP")
+			}
+		}
+		peerDone <- readErr
+	}()
+
+	_, _, _, err = receiveMessage(
+		ctx, requestor.Conn(), requestor.Machine(), newMessageReassembler(dicom.ImplicitVRLittleEndian),
+	)
+	var peerRelease *PeerReleaseError
+	if !errors.As(err, &peerRelease) {
+		t.Fatalf("receiveMessage error = %T %v, want *PeerReleaseError", err, err)
+	}
+	if err := <-peerDone; err != nil {
+		t.Fatalf("peer release: %v", err)
+	}
 }
 
 // TestCommandLastBitSetIndependentOfDataset is the named DIMSE-001 regression — the concrete

@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/acse"
 	"github.com/failed33/go-radx/dimse/dul"
 	"github.com/failed33/go-radx/dimse/pdu"
 )
@@ -302,6 +303,12 @@ func receiveMessage(ctx context.Context, conn *dul.Conn, m *dul.StateMachine, r 
 		}
 		data, ok := p.(*pdu.DataTF)
 		if !ok {
+			if _, released := p.(*pdu.ReleaseRQ); released {
+				if releaseErr := acse.CompletePeerRelease(ctx, conn, m); releaseErr != nil {
+					return CommandSet{}, nil, 0, &TransportError{Op: "complete peer release", Cause: releaseErr}
+				}
+				return CommandSet{}, nil, 0, &PeerReleaseError{}
+			}
 			return CommandSet{}, nil, 0, &ProtocolError{
 				State:  m.CurrentState(),
 				Detail: "expected a P-DATA-TF carrying a DIMSE message, got " + p.Type().String(),
@@ -336,7 +343,7 @@ func translateInboundError(m *dul.StateMachine, err error) error {
 	if errors.As(err, &se) {
 		return &ProtocolError{State: se.State, Detail: se.Error()}
 	}
-	return &ProtocolError{State: m.CurrentState(), Detail: "reading DIMSE message: " + err.Error()}
+	return &TransportError{Op: "read DIMSE message", Cause: err}
 }
 
 // wrapStateError wraps a dul state-machine fault as a typed *ProtocolError naming the state.

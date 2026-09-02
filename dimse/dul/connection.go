@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"net"
 	"os"
 	"sync"
@@ -162,16 +161,17 @@ func DriveInbound(ctx context.Context, conn *Conn, m *StateMachine) (pdu.PDU, Ac
 			errors.As(readErr, &idleErr) {
 			return nil, ActionNone, readErr
 		}
-		// A clean io.EOF at a PDU boundary is an orderly transport close: Evt17, not Evt19,
-		// and never an A-ABORT.
-		if errors.Is(readErr, io.EOF) {
+		// Codec errors are malformed peer input. Transport errors, including a truncated PDU,
+		// close the association without pretending the peer sent an invalid PDU.
+		var pduErr *pdu.PDUError
+		if !errors.As(readErr, &pduErr) {
 			action, _, smErr := m.Apply(Evt17)
 			if smErr != nil {
 				return nil, action, smErr
 			}
 			return nil, action, readErr
 		}
-		// Any other read error is treated as an invalid/unrecognised PDU: Evt19.
+		// A malformed PDU drives the protocol-fault path.
 		from := m.CurrentState()
 		action, _, smErr := m.Apply(Evt19)
 		sendFaultAbort(ctx, conn, action, pdu.AbortReasonUnrecognizedPDU)

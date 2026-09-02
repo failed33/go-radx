@@ -307,7 +307,7 @@ func (ae *AE) dial(ctx context.Context, addr string) (net.Conn, error) {
 	if tlsCfg == nil {
 		nc, err := d.DialContext(ctx, "tcp", addr)
 		if err != nil {
-			return nil, &AssociationError{Kind: AssociationNotEstablished, Detail: "dial: " + err.Error()}
+			return nil, &AssociationError{Kind: AssociationNotEstablished, Detail: "dial: " + err.Error(), Cause: err}
 		}
 		return nc, nil
 	}
@@ -330,7 +330,7 @@ func (ae *AE) dial(ctx context.Context, addr string) (net.Conn, error) {
 	td := tls.Dialer{NetDialer: &d, Config: tlsCfg}
 	nc, err := td.DialContext(dialCtx, "tcp", addr)
 	if err != nil {
-		return nil, &AssociationError{Kind: AssociationNotEstablished, Detail: "tls dial: " + err.Error()}
+		return nil, &AssociationError{Kind: AssociationNotEstablished, Detail: "tls dial: " + err.Error(), Cause: err}
 	}
 	return nc, nil
 }
@@ -519,12 +519,14 @@ func translateAssociateError(err error) error {
 		return nil
 	}
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-		return &AssociationError{Kind: AssociationTimeout, Detail: err.Error()}
+		return &AssociationError{Kind: AssociationTimeout, Detail: err.Error(), Cause: err}
 	}
 
 	var rej *acse.RejectedError
 	if errors.As(err, &rej) {
-		return &AssociationError{Kind: AssociationRejected, Source: rej.Source, Reason: rej.Reason}
+		return &AssociationError{
+			Kind: AssociationRejected, Result: rej.Result, Source: rej.Source, Reason: rej.Reason,
+		}
 	}
 	var ab *acse.AbortedError
 	if errors.As(err, &ab) {

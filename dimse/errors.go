@@ -44,17 +44,53 @@ func (k AssociationErrorKind) String() string {
 // without PHI; it never carries a patient value.
 type AssociationError struct {
 	Kind   AssociationErrorKind
+	Result uint8 // PS3.8 rejection result: permanent or transient (0 when not applicable)
 	Source uint8 // PS3.8 rejection/abort source (0 when not applicable)
 	Reason uint8 // PS3.8 reason (0 when not applicable)
 	// Detail names the violated constraint for kinds without a wire source/reason.
 	Detail string
+	Cause  error
 }
 
 func (e *AssociationError) Error() string {
 	if e.Detail != "" {
 		return fmt.Sprintf("dimse: association %s: %s", e.Kind, e.Detail)
 	}
-	return fmt.Sprintf("dimse: association %s (source %d, reason %d)", e.Kind, e.Source, e.Reason)
+	return fmt.Sprintf("dimse: association %s (result %d, source %d, reason %d)",
+		e.Kind, e.Result, e.Source, e.Reason)
+}
+
+// Unwrap preserves the transport or context failure that prevented association establishment.
+func (e *AssociationError) Unwrap() error { return e.Cause }
+
+// TransportError reports a socket read or write failure while an association is established.
+// Cause preserves the concrete net or io error for errors.Is/errors.As classification.
+type TransportError struct {
+	Op    string
+	Cause error
+}
+
+func (e *TransportError) Error() string {
+	if e.Op == "" {
+		return "dimse: transport: " + e.Cause.Error()
+	}
+	return fmt.Sprintf("dimse: transport %s: %v", e.Op, e.Cause)
+}
+
+func (e *TransportError) Unwrap() error { return e.Cause }
+
+// PeerReleaseError reports that the peer gracefully released the association while a DIMSE
+// operation was awaiting its response. The release handshake and socket close have completed.
+type PeerReleaseError struct{}
+
+func (e *PeerReleaseError) Error() string {
+	return "dimse: peer released the association during the operation"
+}
+
+// Is lets callers classify every PeerReleaseError through one sentinel value.
+func (e *PeerReleaseError) Is(target error) bool {
+	_, ok := target.(*PeerReleaseError)
+	return ok
 }
 
 // AbortError reports an A-ABORT (user) or A-P-ABORT (provider) on an established association.
@@ -90,8 +126,7 @@ func (e *TimeoutError) Error() string {
 }
 
 // ProtocolError reports a malformed PDU, a length-limit violation, or an unexpected PDU for
-// the current DUL state. It names the state and the violated constraint without PHI;
-// truncated or short reads wrap io.ErrUnexpectedEOF.
+// the current DUL state. It names the state and the violated constraint without PHI.
 type ProtocolError struct {
 	State State
 	// Detail names the violated constraint without any patient value.
