@@ -309,6 +309,13 @@ func receiveMessage(ctx context.Context, conn *dul.Conn, m *dul.StateMachine, r 
 				}
 				return CommandSet{}, nil, 0, &PeerReleaseError{}
 			}
+			if aborted, ok := p.(*pdu.Abort); ok {
+				return CommandSet{}, nil, 0, &AbortError{
+					Provider: aborted.Source == pdu.AbortSourceServiceProvider,
+					Source:   aborted.Source,
+					Reason:   aborted.Reason,
+				}
+			}
 			return CommandSet{}, nil, 0, &ProtocolError{
 				State:  m.CurrentState(),
 				Detail: "expected a P-DATA-TF carrying a DIMSE message, got " + p.Type().String(),

@@ -33,17 +33,22 @@ func collectPDVs(pdus []*pdu.DataTF) []pdu.PresentationDataValue {
 	return items
 }
 
-func TestReceiveMessageCompletesPeerRelease(t *testing.T) {
+func messageTestAssociation(t *testing.T) (context.Context, *acse.Requestor, *acse.Acceptor) {
+	t.Helper()
 	client, server := net.Pipe()
 	t.Cleanup(func() { client.Close(); server.Close() })
 	requestConn := dul.NewConn(client, 0)
 	acceptConn := dul.NewConn(server, 0)
 	ctx, cancel := context.WithTimeout(t.Context(), time.Second)
-	defer cancel()
+	t.Cleanup(cancel)
 
-	accepted := make(chan *acse.Acceptor, 1)
+	type acceptResult struct {
+		acceptor *acse.Acceptor
+		err      error
+	}
+	accepted := make(chan acceptResult, 1)
 	go func() {
-		acceptor, _ := acse.Accept(ctx, acceptConn, acse.AcceptParams{
+		acceptor, err := acse.Accept(ctx, acceptConn, acse.AcceptParams{
 			CalledAETitle: "ACCEPTOR",
 			MaxPDULength:  16382,
 			Supported: []acse.SupportedContext{{
@@ -51,7 +56,7 @@ func TestReceiveMessageCompletesPeerRelease(t *testing.T) {
 				TransferSyntaxes: []string{string(dicom.ImplicitVRLittleEndian)},
 			}},
 		})
-		accepted <- acceptor
+		accepted <- acceptResult{acceptor: acceptor, err: err}
 	}()
 	requestor, err := acse.Associate(ctx, requestConn, acse.Request{
 		CalledAETitle: "ACCEPTOR", CallingAETitle: "REQUESTOR", MaxPDULength: 16382,
@@ -63,10 +68,15 @@ func TestReceiveMessageCompletesPeerRelease(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Associate: %v", err)
 	}
-	acceptor := <-accepted
-	if acceptor == nil {
-		t.Fatal("Accept failed")
+	result := <-accepted
+	if result.err != nil {
+		t.Fatalf("Accept: %v", result.err)
 	}
+	return ctx, requestor, result.acceptor
+}
+
+func TestReceiveMessageCompletesPeerRelease(t *testing.T) {
+	ctx, requestor, acceptor := messageTestAssociation(t)
 
 	peerDone := make(chan error, 1)
 	go func() {
@@ -88,7 +98,7 @@ func TestReceiveMessageCompletesPeerRelease(t *testing.T) {
 		peerDone <- readErr
 	}()
 
-	_, _, _, err = receiveMessage(
+	_, _, _, err := receiveMessage(
 		ctx, requestor.Conn(), requestor.Machine(), newMessageReassembler(dicom.ImplicitVRLittleEndian),
 	)
 	var peerRelease *PeerReleaseError
@@ -97,6 +107,34 @@ func TestReceiveMessageCompletesPeerRelease(t *testing.T) {
 	}
 	if err := <-peerDone; err != nil {
 		t.Fatalf("peer release: %v", err)
+	}
+}
+
+func TestReceiveMessagePreservesPeerAbort(t *testing.T) {
+	ctx, requestor, acceptor := messageTestAssociation(t)
+
+	abort := &pdu.Abort{Source: pdu.AbortSourceServiceUser, Reason: pdu.AbortReasonNotSpecified}
+	peerDone := make(chan error, 1)
+	go func() {
+		if _, _, err := acceptor.Machine().Apply(dul.Evt15); err != nil {
+			peerDone <- err
+			return
+		}
+		peerDone <- acceptor.Conn().WritePDU(ctx, abort)
+	}()
+
+	_, _, _, err := receiveMessage(
+		ctx, requestor.Conn(), requestor.Machine(), newMessageReassembler(dicom.ImplicitVRLittleEndian),
+	)
+	var abortErr *AbortError
+	if !errors.As(err, &abortErr) {
+		t.Fatalf("receiveMessage error = %T %v, want *AbortError", err, err)
+	}
+	if abortErr.Provider || abortErr.Source != abort.Source || abortErr.Reason != abort.Reason {
+		t.Fatalf("AbortError = %+v, want source/reason from peer", abortErr)
+	}
+	if err := <-peerDone; err != nil {
+		t.Fatalf("peer abort: %v", err)
 	}
 }
 
