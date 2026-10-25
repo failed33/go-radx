@@ -20,7 +20,7 @@ func decodeValue(br *boundedReader, h elementHeader, enc encoding, charset *Spec
 	return decodeValueBytes(h.vr, raw, enc, charset)
 }
 
-// decodeValueBytes decodes an already-read value field into a typed Value. It is
+// decodeValueBytes takes ownership of an already-read value field. It is
 // shared by the in-line path (decodeValue) and the deferred-load path, so a value
 // decodes identically whether it was materialised at read time or on demand.
 func decodeValueBytes(vr VR, raw []byte, enc encoding, charset *SpecificCharacterSet) (Value, error) {
@@ -38,7 +38,7 @@ func decodeValueBytes(vr VR, raw []byte, enc encoding, charset *SpecificCharacte
 		return decodeDecimals(vr, raw)
 
 	case VROB, VROW, VROL, VROV, VRUN:
-		return NewBytes(vr, raw), nil
+		return &Bytes{vr: vr, b: raw}, nil
 
 	case VRUSorSS:
 		// Under Implicit VR LE the dictionary yields the ambiguous US/SS placeholder
@@ -59,7 +59,7 @@ func decodeValueBytes(vr VR, raw []byte, enc encoding, charset *SpecificCharacte
 		// would corrupt any byte equal to the backslash value delimiter. Materialise the
 		// bytes losslessly exactly as OW/OB do, keeping the placeholder VR so the write
 		// path resolves it to a concrete VR (see resolveExplicitVR).
-		return NewBytes(vr, raw), nil
+		return &Bytes{vr: vr, b: raw}, nil
 
 	default:
 		// All remaining VRs are text: AE AS CS DA DT LO LT PN SH ST TM UC UI UR UT.
@@ -342,7 +342,7 @@ func encodeTags(w io.Writer, t *Tags, bo binary.ByteOrder) (uint32, error) {
 
 // encodeBytes writes the raw bytes, padding to even with a trailing NULL.
 func encodeBytes(w io.Writer, t *Bytes) (uint32, error) {
-	b := t.Bytes()
+	b := t.b
 	if int64(len(b)) > maxValueFieldLen {
 		return 0, &ValueError{VR: t.VR(), Msg: "value field exceeds the 32-bit element length"}
 	}
