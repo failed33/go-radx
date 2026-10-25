@@ -10,6 +10,13 @@ legacy codebase (`legacy-main`) and are not continued here.
 
 ## [Unreleased]
 
+### Changed
+
+- Part 10 `Write` streams the main dataset without retaining a second encoded copy. Binary values reuse
+  internally owned encode/decode buffers; public constructors and getters still copy at ownership boundaries.
+  Late value or sink errors may leave partial output, which callers must discard.
+  ([#1](https://github.com/failed33/go-radx/pull/1))
+
 ## [0.12.0] - 2026-08-28
 
 ### Changed
