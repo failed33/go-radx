@@ -167,10 +167,7 @@ func writeDataSet(w io.Writer, ds *DataSet, ts TransferSyntax) error {
 // non-conformant stream; re-encode it first (Transcode + File.SetPixelData).
 func writeEncapsulatedElement(w io.Writer, e Element, ev *encapsulatedValue, ts TransferSyntax) error {
 	if !ts.IsEncapsulated() {
-		return &ValueError{
-			Tag: e.Tag, VR: e.VR,
-			Msg: "encapsulated pixel data cannot be written under an uncompressed transfer syntax; transcode it first",
-		}
+		return encapsulatedTransferSyntaxError(e.Tag, e.VR)
 	}
 	// Encapsulated pixel data carries a concrete VR (OB/OW), so the US-or-SS
 	// disambiguation does not apply: signed is false.
@@ -179,6 +176,13 @@ func writeEncapsulatedElement(w io.Writer, e Element, ev *encapsulatedValue, ts 
 	}
 	_, err := w.Write(ev.stream)
 	return err
+}
+
+func encapsulatedTransferSyntaxError(tag Tag, vr VR) error {
+	return &ValueError{
+		Tag: tag, VR: vr,
+		Msg: "encapsulated pixel data cannot be written under an uncompressed transfer syntax; transcode it first",
+	}
 }
 
 // writeSequenceElement writes an SQ element: its header with the recorded length
