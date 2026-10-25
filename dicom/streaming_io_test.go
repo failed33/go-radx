@@ -177,8 +177,8 @@ func TestBinaryOwnershipStaysPrivateAtPublicBoundaries(t *testing.T) {
 		t.Fatal(err)
 	}
 	source[0] = 8
-	copy := decoded.(*Bytes).Bytes()
-	copy[0] = 7
+	returned := decoded.(*Bytes).Bytes()
+	returned[0] = 7
 	if decoded.(*Bytes).Bytes()[0] != 9 {
 		t.Fatal("decoded bytes alias the reader's source or a public getter result")
 	}
