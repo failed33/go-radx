@@ -38,7 +38,7 @@ import (
 // when it is positive: a peer that completes negotiation then sends nothing must not hold a capacity
 // slot and a goroutine forever (a slot-exhaustion DoS — Codex/concurrency review). On the timeout
 // the read returns context.DeadlineExceeded, the association ends, and the Server releases the slot.
-func dispatchAssociation(ctx context.Context, conn *dul.Conn, params acse.AcceptParams, acseTimeout, networkTimeout time.Duration, h any, move moveSupport) error {
+func dispatchAssociation(ctx context.Context, conn *dul.Conn, params acse.AcceptParams, acseTimeout, networkTimeout time.Duration, h any, move moveSupport) connectionEnd {
 	negotiateCtx := ctx
 	if acseTimeout > 0 {
 		var cancel context.CancelFunc
@@ -47,7 +47,7 @@ func dispatchAssociation(ctx context.Context, conn *dul.Conn, params acse.Accept
 	}
 	acc, err := acse.Accept(negotiateCtx, conn, params)
 	if err != nil {
-		return err
+		return connectionFailure(ctx, ConnectionEstablish, err)
 	}
 	// networkTimeout is the data-transfer idle bound: armed only once negotiation is complete
 	// (the handshake stays governed solely by acseTimeout above), it bounds each PDU read and
@@ -60,11 +60,11 @@ func dispatchAssociation(ctx context.Context, conn *dul.Conn, params acse.Accept
 
 	for {
 		if err := ctx.Err(); err != nil {
-			return err
+			return connectionEnd{reason: ConnectionServerStopped, err: err}
 		}
 		cmd, ds, pcID, kind, err := readInbound(ctx, acc, resolveTS)
 		if err != nil {
-			return err
+			return connectionFailure(ctx, ConnectionReceive, err)
 		}
 		switch kind {
 		case inboundReleased:
@@ -73,13 +73,23 @@ func dispatchAssociation(ctx context.Context, conn *dul.Conn, params acse.Accept
 			// that read forever, holding the capacity slot and goroutine until Shutdown — a
 			// slot-exhaustion DoS in the release phase (P1 adversarial review). The connection's idle
 			// bound covers that await-close read like every other read on this association.
-			return acc.CompleteRelease(ctx)
+			if err := acc.CompleteRelease(ctx); err != nil {
+				return connectionFailure(ctx, ConnectionRelease, err)
+			}
+			return connectionEnd{reason: ConnectionReleased}
 		case inboundAborted, inboundClosed:
 			// The peer aborted or closed the transport in an orderly way; the association is over.
-			return conn.Close()
+			reason := ConnectionPeerClosed
+			if kind == inboundAborted {
+				reason = ConnectionPeerAborted
+			}
+			if ctx.Err() != nil {
+				reason = ConnectionServerStopped
+			}
+			return connectionEnd{reason: reason, err: conn.Close()}
 		case inboundMessage:
 			if derr := dispatchMessage(ctx, acc, h, move, cmd, ds, pcID, calling, called); derr != nil {
-				return derr
+				return connectionFailure(ctx, ConnectionProcess, derr)
 			}
 		}
 	}

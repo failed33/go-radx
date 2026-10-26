@@ -10,6 +10,15 @@ legacy codebase (`legacy-main`) and are not continued here.
 
 ## [Unreleased]
 
+### Added
+
+- Independent DIMSE server hooks for TCP connection lifecycle and whole local response-send completion.
+  Connection events retain remote identity, original errors, coarse protocol operations and release/abort/EOF/stop reasons.
+  Response events cover all supported C- and N-service replies, including pending/final and unsupported-operation replies,
+  with connection/message correlation and command/dataset encoding or transport failures.
+  Callbacks are synchronous and must remain fast; successful local sends do not prove peer receipt.
+  ([#2](https://github.com/failed33/go-radx/pull/2))
+
 ### Changed
 
 - Part 10 `Write` streams the main dataset without retaining a second encoded copy. Binary values reuse

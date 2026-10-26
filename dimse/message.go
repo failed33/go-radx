@@ -267,7 +267,15 @@ func receiveCommand(ctx context.Context, conn *dul.Conn, m *dul.StateMachine) (C
 // independently of the dataset (DIMSE-001). It advances the state machine by the local P-DATA
 // request event (Evt9) before each write, exactly as the C-ECHO send does, so the DUL lifecycle is
 // honoured. The dataset (when present) is encoded with ts, the negotiated transfer syntax.
-func sendMessage(ctx context.Context, conn *dul.Conn, m *dul.StateMachine, pcID uint8, cmd CommandSet, ds *dicom.DataSet, ts dicom.TransferSyntax, sendCap MaxPDULength) error {
+func sendMessage(ctx context.Context, conn *dul.Conn, m *dul.StateMachine, pcID uint8, cmd CommandSet, ds *dicom.DataSet, ts dicom.TransferSyntax, sendCap MaxPDULength) (err error) {
+	if observation := responseObservation(ctx, conn, cmd); observation != nil {
+		defer func() {
+			observation.response(ResponseSendEvent{
+				ConnectionID: observation.id, PresentationID: pcID, CommandField: cmd.CommandField,
+				MessageIDBeingRespondedTo: cmd.MessageIDBeingRespondedTo, StatusCode: cmd.Status, Err: err,
+			})
+		}()
+	}
 	pdus, err := fragmentMessage(cmd, ds, ts, pcID, sendCap)
 	if err != nil {
 		return err
