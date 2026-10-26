@@ -45,6 +45,7 @@ func dispatchAssociation(ctx context.Context, conn *dul.Conn, params acse.Accept
 		negotiateCtx, cancel = context.WithTimeout(ctx, acseTimeout)
 		defer cancel()
 	}
+	serverStage(ctx, ServerStageAssociation)
 	acc, err := acse.Accept(negotiateCtx, conn, params)
 	if err != nil {
 		return err
@@ -62,6 +63,7 @@ func dispatchAssociation(ctx context.Context, conn *dul.Conn, params acse.Accept
 		if err := ctx.Err(); err != nil {
 			return err
 		}
+		serverStage(ctx, ServerStageInbound)
 		cmd, ds, pcID, kind, err := readInbound(ctx, acc, resolveTS)
 		if err != nil {
 			return err
@@ -73,11 +75,13 @@ func dispatchAssociation(ctx context.Context, conn *dul.Conn, params acse.Accept
 			// that read forever, holding the capacity slot and goroutine until Shutdown — a
 			// slot-exhaustion DoS in the release phase (P1 adversarial review). The connection's idle
 			// bound covers that await-close read like every other read on this association.
+			serverStage(ctx, ServerStageRelease)
 			return acc.CompleteRelease(ctx)
 		case inboundAborted, inboundClosed:
 			// The peer aborted or closed the transport in an orderly way; the association is over.
 			return conn.Close()
 		case inboundMessage:
+			serverStage(ctx, ServerStageDispatch)
 			if derr := dispatchMessage(ctx, acc, h, move, cmd, ds, pcID, calling, called); derr != nil {
 				return derr
 			}
@@ -117,6 +121,7 @@ func readInbound(
 	m := acc.Machine()
 	r := newMessageReassemblerFunc(resolveTS)
 	for {
+		serverStage(ctx, ServerStageInbound)
 		p, _, err := dul.DriveInbound(ctx, conn, m)
 		if err != nil {
 			if errors.Is(err, io.EOF) {
@@ -127,6 +132,7 @@ func readInbound(
 		switch pv := p.(type) {
 		case *pdu.DataTF:
 			for _, item := range pv.Items {
+				serverStage(ctx, ServerStageMessageDecode)
 				done, aerr := r.add(item)
 				if aerr != nil {
 					return CommandSet{}, nil, 0, inboundClosed, aerr
