@@ -10,6 +10,13 @@ legacy codebase (`legacy-main`) and are not continued here.
 
 ## [Unreleased]
 
+### Added
+
+- Optional DIMSE server observer for TCP admission/refusal, pre-handler connection faults with their processing phase,
+  local C-STORE response-send results, and an opaque connection ID shared with handler contexts.
+  A successful local response send does not prove peer receipt.
+  ([#2](https://github.com/failed33/go-radx/pull/2))
+
 ### Changed
 
 - Part 10 `Write` streams the main dataset without retaining a second encoded copy. Binary values reuse
