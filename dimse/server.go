@@ -22,7 +22,8 @@ const defaultMaxAssociations = 10
 // serverConfig holds the resolved Server options. There is no global mutable state (PRD §9.4);
 // every Server carries its own configuration, immutable after NewServer.
 type serverConfig struct {
-	observer               func(ServerEvent)
+	connectionObserver     func(ConnectionEvent)
+	responseObserver       func(ResponseSendEvent)
 	maxAssociations        int
 	requireCalledAETitle   AETitle
 	requireCallingAETitles []AETitle
@@ -301,7 +302,7 @@ func (s *Server) acceptLoop(ctx context.Context, ln net.Listener) error {
 		select {
 		case s.sem <- struct{}{}:
 		default:
-			s.observe(ServerEvent{Kind: ServerCapacityRefused, ConnectionID: connectionID, Peer: nc.RemoteAddr()})
+			s.observeConnection(ConnectionEvent{Kind: ConnectionCapacityRefused, ConnectionID: connectionID, RemoteAddr: nc.RemoteAddr()})
 			_ = nc.Close()
 			continue
 		}
@@ -316,15 +317,15 @@ func (s *Server) acceptLoop(ctx context.Context, ln net.Listener) error {
 
 		// trackConn already did wg.Add(1) under s.mu (so the goroutine is counted before the
 		// connection is visible to Shutdown); this goroutine pairs it with wg.Done.
-		s.observe(ServerEvent{Kind: ServerConnectionAccepted, ConnectionID: connectionID, Peer: nc.RemoteAddr()})
+		s.observeConnection(ConnectionEvent{Kind: ConnectionAccepted, ConnectionID: connectionID, RemoteAddr: nc.RemoteAddr()})
 		go func() {
-			var connectionErr error
-			observation := &serverObservation{id: connectionID, stage: ServerStageTLS, observe: s.observe}
+			var end connectionEnd
+			observation := &serverObservation{id: connectionID, conn: conn, response: s.cfg.responseObserver}
 			connectionCtx := context.WithValue(ctx, serverConnectionContextKey{}, observation)
 			defer s.wg.Done()
 			defer func() {
 				<-s.sem
-				s.observe(ServerEvent{Kind: ServerConnectionClosed, ConnectionID: connectionID, Peer: nc.RemoteAddr(), Err: connectionErr, Stage: observation.stage})
+				s.observeConnection(ConnectionEvent{Kind: ConnectionClosed, ConnectionID: connectionID, RemoteAddr: nc.RemoteAddr(), Reason: end.reason, Operation: end.operation, Err: end.err})
 			}()
 			defer s.untrackConn(conn)
 			// Complete a TLS handshake (when this is a TLS listener) before any PDU is read. The
@@ -332,14 +333,14 @@ func (s *Server) acceptLoop(ctx context.Context, ln net.Listener) error {
 			// cannot stall the listener; it is bounded explicitly because the read-deadline the PDU
 			// path sets does not cover the writes a handshake also performs (see handshakeAccepted).
 			if err := s.ae.handshakeAccepted(ctx, nc); err != nil {
-				connectionErr = err
+				end = connectionFailure(ctx, ConnectionEstablish, err)
 				// A failed or stalled handshake releases the slot (deferred) and closes the
 				// connection here, so a peer that opens TCP but never completes the handshake cannot
 				// hold a max-association slot past the negotiation bound.
 				_ = conn.Close()
 				return
 			}
-			connectionErr = s.serveConn(connectionCtx, conn)
+			end = s.serveConn(connectionCtx, conn)
 		}()
 	}
 }
@@ -363,7 +364,7 @@ func (ae *AE) handshakeAccepted(ctx context.Context, nc net.Conn) error {
 // serveConn runs one association to completion (negotiate, dispatch, release/abort/close), closing
 // the connection when the dispatch returns. Errors are protocol/transport faults already handled by
 // the typed error path; the connection close is the terminal action either way.
-func (s *Server) serveConn(ctx context.Context, conn *dul.Conn) error {
+func (s *Server) serveConn(ctx context.Context, conn *dul.Conn) connectionEnd {
 	params := acse.AcceptParams{
 		CalledAETitle:          string(s.ae.Title()),
 		MaxPDULength:           uint32(s.ae.config().maxPDULength),
@@ -391,15 +392,9 @@ func (s *Server) serveConn(ctx context.Context, conn *dul.Conn) error {
 		Authenticate: s.authenticate(conn.RemoteAddr()),
 	}
 	move := moveSupport{ae: s.ae, destinations: s.cfg.moveDestinations}
-	if err := dispatchAssociation(ctx, conn, params, s.ae.config().acseTimeout, s.ae.config().networkTimeout, s.handler, move); err != nil {
-		// The association ended on a fault (rejection, abort, protocol error, or a connection the
-		// peer or Shutdown closed under us); the connection is closed below regardless. The error
-		// is returned unchanged to the optional observer, whose consumer must sanitize it.
-		_ = conn.Close()
-		return err
-	}
+	end := dispatchAssociation(ctx, conn, params, s.ae.config().acseTimeout, s.ae.config().networkTimeout, s.handler, move)
 	_ = conn.Close()
-	return nil
+	return end
 }
 
 // Shutdown stops accepting new associations and then drives a cooperative, then forced-wake,

@@ -776,8 +776,26 @@ type CommitmentHandler interface {
 }
 ```
 
-Notification events are observed by registering callbacks on the `Server` (or `AE`) for diagnostics and metrics; they
-never block the protocol.
+### Server observations
+
+Use `WithConnectionObserver(func(ConnectionEvent))` to observe inbound TCP admission, capacity refusal, and termination.
+Admission precedes TLS and DICOM negotiation. Each event carries an opaque per-server connection ID and the remote address,
+including when negotiation fails before a handler runs. Closure distinguishes DICOM release, peer abort, orderly EOF,
+server-context stop, and failure without changing the original error. A coarse operation identifies the error-return boundary
+(establish, receive, process DIMSE, or release); cancellation between operations has no operation label.
+
+Use `WithResponseSendObserver(func(ResponseSendEvent))` to observe every local DIMSE response send on an inbound connection.
+This covers all supported C- and N-service replies, including pending/final and unsupported-operation responses. The event
+contains the connection ID, presentation ID, response command field, Message ID Being Responded To, status, and original
+send error. Completion includes command and dataset encoding and transmission. Nil error proves only local send completion,
+not peer receipt. Requests and sends on other connections are excluded, even if they inherit the handler context.
+
+`ServerConnectionID(ctx)` exposes the same ID to handlers; it is zero outside an inbound server context. The hooks are
+independent and optional. Callbacks run synchronously on accept/connection goroutines, can be concurrent across connections,
+and hold no server lock. Keep callbacks fast and nonblocking; do not panic or call a blocking server method such as
+`Shutdown`. The library creates no observer queues or goroutines and exports no telemetry. Remote addresses and opaque
+errors may contain private information: sanitize them before logging or exporting. SCU operations retain their existing
+returned-error and `LastError` contracts.
 
 When the SCP's C-GET / C-MOVE handler drives sub-operation C-STOREs, each sub-operation gets a **real, distinct Message
 ID**, and each C-STORE-RSP is read through the same reassembly loop as a normal response — the prototype used

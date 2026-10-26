@@ -3,71 +3,104 @@ package dimse
 import (
 	"context"
 	"net"
+
+	"github.com/failed33/go-radx/dimse/dul"
 )
 
-// ServerEventKind identifies inbound connection and response-send observations.
-type ServerEventKind string
+// ConnectionEventKind identifies admission and termination of inbound TCP connections.
+// Admission precedes TLS and DICOM association negotiation.
+type ConnectionEventKind string
 
 const (
-	ServerCapacityRefused    ServerEventKind = "capacity_refused"
-	ServerConnectionAccepted ServerEventKind = "connection_accepted"
-	ServerConnectionClosed   ServerEventKind = "connection_closed"
-	ServerStoreResponse      ServerEventKind = "store_response"
+	ConnectionAccepted        ConnectionEventKind = "accepted"
+	ConnectionCapacityRefused ConnectionEventKind = "capacity_refused"
+	ConnectionClosed          ConnectionEventKind = "closed"
 )
 
-// ServerStage identifies the operation running when a connection ended.
-type ServerStage string
+// ConnectionCloseReason identifies how an admitted connection ended. A peer abort
+// or orderly EOF is distinct from a graceful DICOM release even when Err is nil.
+type ConnectionCloseReason string
 
 const (
-	ServerStageTLS             ServerStage = "tls"
-	ServerStageAssociation     ServerStage = "association"
-	ServerStageInbound         ServerStage = "inbound"
-	ServerStageMessageDecode   ServerStage = "message_decode"
-	ServerStageDispatch        ServerStage = "dispatch"
-	ServerStageStoreValidation ServerStage = "store_validation"
-	ServerStageStoreResponse   ServerStage = "store_response"
-	ServerStageRelease         ServerStage = "release"
+	ConnectionReleased      ConnectionCloseReason = "released"
+	ConnectionPeerAborted   ConnectionCloseReason = "peer_aborted"
+	ConnectionPeerClosed    ConnectionCloseReason = "peer_closed"
+	ConnectionServerStopped ConnectionCloseReason = "server_stopped"
+	ConnectionFailed        ConnectionCloseReason = "failed"
 )
 
-// ServerEvent carries protocol/resource diagnostics without dataset values.
-// ConnectionAccepted means TCP admission, not successful DICOM negotiation.
-// Err on ConnectionClosed retains negotiation, protocol, decode and transport
-// faults, including those before a StoreHandler can run. Err remains opaque;
-// observers must sanitize it before exporting. Active is a concurrent
-// snapshot after the event; another connection may change it immediately.
-type ServerEvent struct {
-	Kind         ServerEventKind
+// ConnectionOperation identifies the protocol boundary returning a connection
+// error, not the server's last progress marker. It is empty for a clean close or
+// cancellation detected between operations. ResponseSendEvent reports individual
+// response-send errors within ConnectionProcess.
+type ConnectionOperation string
+
+const (
+	ConnectionEstablish ConnectionOperation = "establish"
+	ConnectionReceive   ConnectionOperation = "receive"
+	ConnectionProcess   ConnectionOperation = "process_dimse"
+	ConnectionRelease   ConnectionOperation = "release"
+)
+
+// ConnectionEvent reports one inbound connection's lifecycle. Reason, Operation
+// and Err describe ConnectionClosed only. ServerStopped means the server context
+// was done when termination was observed; Err remains the original error and may
+// retain private information. Observers must sanitize it before exporting.
+// RemoteAddr identifies the peer, including before negotiation; it may be private.
+// ConnectionID is opaque, unique within this Server, and shared with handler contexts.
+type ConnectionEvent struct {
+	Kind         ConnectionEventKind
 	ConnectionID uint64
-	Peer         net.Addr
-	Active       int
-	Capacity     int
+	RemoteAddr   net.Addr
+	Reason       ConnectionCloseReason
+	Operation    ConnectionOperation
 	Err          error
-	Stage        ServerStage
-	// These fields are populated only for ServerStoreResponse. Err is the
-	// local send result; nil does not prove the peer received the response.
-	PresentationID uint8
-	MessageID      uint16
-	StatusCode     uint16
 }
 
-// WithServerObserver reports admission and connection termination, including
-// failures before any DIMSE handler runs. Calls may be concurrent and must not
-// block. No server lock is held while the observer runs. The observer must not
-// panic. Nil disables reporting; the wire and shutdown behavior are unchanged.
-func WithServerObserver(observer func(ServerEvent)) ServerOption {
-	return func(c *serverConfig) { c.observer = observer }
+// ResponseSendEvent reports completion of one local DIMSE response send on an
+// inbound Server connection. All supported C- and N-service responses, including
+// pending, final and unsupported-operation replies, pass through this boundary.
+// Err includes command/dataset encoding and transport failures, unchanged. A nil
+// Err means the entire local send completed; it does not prove peer receipt.
+// No dataset, SOP Instance UID or private peer address is included. Err is opaque
+// and must be sanitized before exporting.
+type ResponseSendEvent struct {
+	ConnectionID              uint64
+	PresentationID            uint8
+	CommandField              CommandField
+	MessageIDBeingRespondedTo uint16
+	StatusCode                uint16
+	Err                       error
+}
+
+// WithConnectionObserver observes inbound TCP admission/refusal and termination.
+// Calls are synchronous on the accept or connection goroutine, may be concurrent,
+// and hold no Server lock. Keep the callback fast: do not block, panic, or call a
+// blocking Server method such as Shutdown from it. Nil disables this hook.
+func WithConnectionObserver(observer func(ConnectionEvent)) ServerOption {
+	return func(c *serverConfig) { c.connectionObserver = observer }
+}
+
+// WithResponseSendObserver observes whole local DIMSE response sends, including
+// datasets, on inbound Server connections. Requests and sends on other connections
+// are excluded even when they inherit a handler context. Calls are synchronous on
+// the sending goroutine, may be concurrent, and hold no Server lock. Keep the
+// callback fast and nonblocking; it must not panic or call blocking Server methods.
+// Nil disables this hook. Neither hook creates goroutines or exports telemetry.
+func WithResponseSendObserver(observer func(ResponseSendEvent)) ServerOption {
+	return func(c *serverConfig) { c.responseObserver = observer }
 }
 
 type serverConnectionContextKey struct{}
 
 type serverObservation struct {
-	id      uint64
-	stage   ServerStage // owned by the connection's dispatch goroutine
-	observe func(ServerEvent)
+	id       uint64
+	conn     *dul.Conn
+	response func(ResponseSendEvent)
 }
 
-// ServerConnectionID returns the opaque connection ID shared by handler calls
-// and ServerEvents on this server. It is zero outside a Server handler context.
+// ServerConnectionID returns the opaque ID shared by handler contexts and this
+// Server's observer events. It is zero outside an inbound Server handler context.
 func ServerConnectionID(ctx context.Context) uint64 {
 	if observation, ok := ctx.Value(serverConnectionContextKey{}).(*serverObservation); ok {
 		return observation.id
@@ -75,26 +108,30 @@ func ServerConnectionID(ctx context.Context) uint64 {
 	return 0
 }
 
-func serverStage(ctx context.Context, stage ServerStage) {
-	if observation, ok := ctx.Value(serverConnectionContextKey{}).(*serverObservation); ok {
-		observation.stage = stage
+func responseObservation(ctx context.Context, conn *dul.Conn, cmd CommandSet) *serverObservation {
+	observation, _ := ctx.Value(serverConnectionContextKey{}).(*serverObservation)
+	if observation == nil || observation.response == nil || observation.conn != conn || !cmd.IsResponse() {
+		return nil
+	}
+	return observation
+}
+
+func (s *Server) observeConnection(event ConnectionEvent) {
+	if s.cfg.connectionObserver != nil {
+		s.cfg.connectionObserver(event)
 	}
 }
 
-func observeStoreResponse(ctx context.Context, info OpInfo, status Status, err error) {
-	if observation, ok := ctx.Value(serverConnectionContextKey{}).(*serverObservation); ok {
-		observation.observe(ServerEvent{
-			Kind: ServerStoreResponse, ConnectionID: observation.id,
-			Stage: ServerStageStoreResponse, PresentationID: info.PresentationID,
-			MessageID: info.MessageID, StatusCode: status.Code, Err: err,
-		})
-	}
+type connectionEnd struct {
+	reason    ConnectionCloseReason
+	operation ConnectionOperation
+	err       error
 }
 
-func (s *Server) observe(event ServerEvent) {
-	if s.cfg.observer != nil {
-		event.Active = len(s.sem)
-		event.Capacity = cap(s.sem)
-		s.cfg.observer(event)
+func connectionFailure(ctx context.Context, operation ConnectionOperation, err error) connectionEnd {
+	reason := ConnectionFailed
+	if ctx.Err() != nil {
+		reason = ConnectionServerStopped
 	}
+	return connectionEnd{reason: reason, operation: operation, err: err}
 }

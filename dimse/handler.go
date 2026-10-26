@@ -210,7 +210,6 @@ func serveStore(ctx context.Context, acc *acse.Acceptor, calling, called AETitle
 // that arrives with no dataset (CommandDataSetType not present) is malformed — a C-STORE always
 // carries the composite SOP Instance.
 func serveStoreMessage(ctx context.Context, acc *acse.Acceptor, h StoreHandler, cmd CommandSet, ds *dicom.DataSet, pcID uint8, info OpInfo) (Status, error) {
-	serverStage(ctx, ServerStageStoreValidation)
 	m := acc.Machine()
 	if cmd.CommandField != CommandCStoreRQ {
 		return Status{}, &ProtocolError{
@@ -258,10 +257,7 @@ func serveStoreMessage(ctx context.Context, acc *acse.Acceptor, h StoreHandler, 
 		HasStatus:                 true,
 		Status:                    status.Code,
 	}
-	serverStage(ctx, ServerStageStoreResponse)
-	err := sendCommand(ctx, acc.Conn(), acc.Machine(), pcID, rsp)
-	observeStoreResponse(ctx, info, status, err)
-	if err != nil {
+	if err := sendCommand(ctx, acc.Conn(), acc.Machine(), pcID, rsp); err != nil {
 		return Status{}, err
 	}
 	return status, nil
