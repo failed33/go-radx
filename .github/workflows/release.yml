@@ -55,7 +55,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.26.4" # pinned to match mise.toml [tools] and both go.mod files
+          go-version: "1.27.3" # pinned to match mise.toml [tools] and both go.mod files
       - uses: anchore/sbom-action/download-syft@v0 # installs syft; goreleaser shells out to it
       - uses: sigstore/cosign-installer@v3 # installs cosign for keyless checksum signing
       - name: Run GoReleaser (build, archive, SBOM, sign, publish)
@@ -96,7 +96,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.26.4"
+          go-version: "1.27.3"
       - uses: anchore/sbom-action/download-syft@v0 # syft so the snapshot exercises SBOM generation
       - name: goreleaser check (config is structurally valid)
         uses: goreleaser/goreleaser-action@v6

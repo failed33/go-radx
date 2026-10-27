@@ -51,9 +51,9 @@ jobs:
           path: |
             ${{ runner.temp }}/.gocache/mod
             ${{ runner.temp }}/.gocache/build
-          key: go-1.26.4-${{ runner.os }}-root-${{ hashFiles('go.sum') }}
+          key: go-1.27.3-${{ runner.os }}-root-${{ hashFiles('go.sum') }}
           restore-keys: |
-            go-1.26.4-${{ runner.os }}-root-
+            go-1.27.3-${{ runner.os }}-root-
       - name: pin-drift (reference tools + interop images pinned)
         # Fails if a reference tool or interop image floated back to an unpinned reference (a
         # `:latest` image tag, an `@latest` install, or an unpinned pip/apt install). Pins of record
@@ -129,9 +129,9 @@ jobs:
           path: |
             ${{ runner.temp }}/.gocache/mod
             ${{ runner.temp }}/.gocache/build
-          key: go-1.26.4-${{ runner.os }}-root-${{ hashFiles('go.sum') }}
+          key: go-1.27.3-${{ runner.os }}-root-${{ hashFiles('go.sum') }}
           restore-keys: |
-            go-1.26.4-${{ runner.os }}-root-
+            go-1.27.3-${{ runner.os }}-root-
       - name: Install dicom3tools (provides dciodvfy) + pydicom
         run: |
           # dciodvfy is a David Clunie dicom3tools program (Ubuntu universe), NOT a dcmtk tool —
@@ -176,9 +176,9 @@ jobs:
           path: |
             ${{ runner.temp }}/.gocache/mod
             ${{ runner.temp }}/.gocache/build
-          key: go-1.26.4-${{ runner.os }}-root-${{ hashFiles('go.sum') }}
+          key: go-1.27.3-${{ runner.os }}-root-${{ hashFiles('go.sum') }}
           restore-keys: |
-            go-1.26.4-${{ runner.os }}-root-
+            go-1.27.3-${{ runner.os }}-root-
       - name: Install JDK 17 (the HL7 validator_cli.jar runs on the JDK)
         # The validator is the official HL7 validator_cli.jar (NOT a container) — the M6a
         # mechanism decision recorded in tools/versions. It is pinned by version AND SHA-256
@@ -232,9 +232,9 @@ jobs:
           path: |
             ${{ runner.temp }}/.gocache/mod
             ${{ runner.temp }}/.gocache/build
-          key: go-1.26.4-${{ runner.os }}-interop-${{ matrix.leg }}-${{ hashFiles('go.sum') }}
+          key: go-1.27.3-${{ runner.os }}-interop-${{ matrix.leg }}-${{ hashFiles('go.sum') }}
           restore-keys: |
-            go-1.26.4-${{ runner.os }}-interop-${{ matrix.leg }}-
+            go-1.27.3-${{ runner.os }}-interop-${{ matrix.leg }}-
       - name: ${{ matrix.leg }} interop tests
         # GitHub-hosted ubuntu runners ship Docker; testcontainers manages the Orthanc,
         # dcm4chee-arc, python-hl7 MLLP peer, and HAPI FHIR stacks behind the pinned image
@@ -252,7 +252,7 @@ jobs:
       - uses: actions/checkout@v5
       - uses: actions/setup-go@v6
         with:
-          go-version: "1.26.4"
+          go-version: "1.27.3"
           # setup-go caches GOMODCACHE + GOCACHE keyed on the Go version and the named go.sum; scope
           # it to the root module so the scan of ./... reuses the module download and build objects.
           cache: true
@@ -298,9 +298,9 @@ jobs:
           path: |
             ${{ runner.temp }}/.gocache/mod
             ${{ runner.temp }}/.gocache/build
-          key: go-1.26.4-${{ runner.os }}-cmd-radx-${{ hashFiles('cmd/radx/go.sum') }}
+          key: go-1.27.3-${{ runner.os }}-cmd-radx-${{ hashFiles('cmd/radx/go.sum') }}
           restore-keys: |
-            go-1.26.4-${{ runner.os }}-cmd-radx-
+            go-1.27.3-${{ runner.os }}-cmd-radx-
       - name: build
         run: go build ./...
       - name: go vet
@@ -365,9 +365,9 @@ jobs:
           path: |
             ${{ runner.temp }}/.gocache/mod
             ${{ runner.temp }}/.gocache/build
-          key: go-1.26.4-${{ runner.os }}-codecs-${{ hashFiles('go.sum') }}
+          key: go-1.27.3-${{ runner.os }}-codecs-${{ hashFiles('go.sum') }}
           restore-keys: |
-            go-1.26.4-${{ runner.os }}-codecs-
+            go-1.27.3-${{ runner.os }}-codecs-
       - name: Install build tooling
         run: sudo apt-get update && sudo apt-get install -y cmake build-essential pkg-config nasm curl
       # Cache the downloaded codec source tarballs keyed on the pinned versions (tools/versions). The
@@ -577,9 +577,9 @@ jobs:
           path: |
             ${{ runner.temp }}/.gocache/mod
             ${{ runner.temp }}/.gocache/build
-          key: go-1.26.4-${{ runner.os }}-root-${{ hashFiles('go.sum') }}
+          key: go-1.27.3-${{ runner.os }}-root-${{ hashFiles('go.sum') }}
           restore-keys: |
-            go-1.26.4-${{ runner.os }}-root-
+            go-1.27.3-${{ runner.os }}-root-
       - name: PHI sweep
         run: mise run phi-sweep
 
@@ -612,9 +612,9 @@ jobs:
           path: |
             ${{ runner.temp }}/.gocache/mod
             ${{ runner.temp }}/.gocache/build
-          key: go-1.26.4-${{ runner.os }}-root-${{ hashFiles('go.sum') }}
+          key: go-1.27.3-${{ runner.os }}-root-${{ hashFiles('go.sum') }}
           restore-keys: |
-            go-1.26.4-${{ runner.os }}-root-
+            go-1.27.3-${{ runner.os }}-root-
       - name: Fuzz targets (bounded, hang = failure)
         run: mise run fuzz
 
@@ -649,9 +649,9 @@ jobs:
           path: |
             ${{ runner.temp }}/.gocache/mod
             ${{ runner.temp }}/.gocache/build
-          key: go-1.26.4-${{ runner.os }}-root-${{ hashFiles('go.sum') }}
+          key: go-1.27.3-${{ runner.os }}-root-${{ hashFiles('go.sum') }}
           restore-keys: |
-            go-1.26.4-${{ runner.os }}-root-
+            go-1.27.3-${{ runner.os }}-root-
       - name: Replay malformed corpus under the memory cap
         run: mise run hostile:corpus
 
@@ -681,9 +681,9 @@ jobs:
           path: |
             ${{ runner.temp }}/.gocache/mod
             ${{ runner.temp }}/.gocache/build
-          key: go-1.26.4-${{ runner.os }}-root-${{ hashFiles('go.sum') }}
+          key: go-1.27.3-${{ runner.os }}-root-${{ hashFiles('go.sum') }}
           restore-keys: |
-            go-1.26.4-${{ runner.os }}-root-
+            go-1.27.3-${{ runner.os }}-root-
       - name: Run dicom + fhir benchmarks once
         run: mise run bench
       # ADVISORY benchstat comparison against the committed baselines (PRD 11.3: benchmarks are
@@ -738,9 +738,9 @@ jobs:
           path: |
             ${{ runner.temp }}/.gocache/mod
             ${{ runner.temp }}/.gocache/build
-          key: go-1.26.4-${{ runner.os }}-root-${{ hashFiles('go.sum') }}
+          key: go-1.27.3-${{ runner.os }}-root-${{ hashFiles('go.sum') }}
           restore-keys: |
-            go-1.26.4-${{ runner.os }}-root-
+            go-1.27.3-${{ runner.os }}-root-
       - name: Conformance-drift
         run: mise run conformance-drift
 

@@ -1,6 +1,6 @@
 module github.com/failed33/go-radx/tools/bench-compare/gobench
 
-go 1.26.4
+go 1.27.3
 
 require github.com/failed33/go-radx v0.0.0-00010101000000-000000000000
 
