@@ -18,6 +18,11 @@ legacy codebase (`legacy-main`) and are not continued here.
   with connection/message correlation and command/dataset encoding or transport failures.
   Callbacks are synchronous and must remain fast; successful local sends do not prove peer receipt.
   ([#2](https://github.com/failed33/go-radx/pull/2))
+- Bit-preserving C-STORE: an SCP handler implementing `dimse.EncodedStoreHandler` receives the dataset bytes as
+  received in the negotiated transfer syntax plus a prefix decoded only through Series Instance UID, instead of a fully
+  decoded dataset. Context and SOP Instance UID validation still run first.
+  `EncodedDataSet.WriteFileMeta` writes the PS3.10 header that precedes those bytes in a Part 10 file.
+  `dicom.WithStopAtTag` stops a dataset read before a given tag, and `dicom.WriteFileMeta` is exported.
 
 ### Changed
 

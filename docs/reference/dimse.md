@@ -776,6 +776,52 @@ type CommitmentHandler interface {
 }
 ```
 
+### Bit-preserving C-STORE
+
+A storage SCP that persists instances exactly as received implements `EncodedStoreHandler` instead of `StoreHandler`
+(pynetdicom's `event.encoded_dataset()`, DCMTK `storescp`). The handler receives the dataset PDV payload in the
+negotiated transfer syntax, without the dispatcher decoding the whole dataset. The dispatcher decodes only the
+top-level elements through Series Instance UID `(0020,000E)` with `dicom.WithStopAtTag`. It needs that prefix to keep
+the mandatory checks: the Affected SOP Class UID must match the negotiated context, and the Affected SOP Instance UID
+must match the dataset's `(0008,0018)`. A mismatch still faults the association before the handler runs. The handler
+reads its routing attributes from the same prefix. When a handler implements both interfaces, the SCP dispatcher
+uses `EncodedStoreHandler`. The C-GET sub-operation sink (`WithStoreHandler`) still takes a `StoreHandler`.
+
+```go
+// EncodedDataSet is a C-STORE dataset exactly as it arrived on the wire.
+type EncodedDataSet struct {
+	Bytes  []byte         // PDV payload in OpInfo.TransferSyntax; per message, the handler may retain it
+	Prefix *dicom.DataSet // top-level elements through Series Instance UID (0020,000E)
+}
+
+type EncodedStoreHandler interface {
+	StoreEncoded(ctx context.Context, ds EncodedDataSet, info OpInfo) Status
+}
+
+// WriteFileMeta writes the PS3.10 header: zero preamble, DICM, and File Meta Information built from the C-STORE
+// SOP Class/Instance UID, the negotiated transfer syntax, and implementationClassUID. A Part 10 file is that
+// header followed by ds.Bytes unchanged.
+func (ds EncodedDataSet) WriteFileMeta(w io.Writer, info OpInfo, implementationClassUID dicom.UID) error
+```
+
+The header is small, so buffer it to learn the file size, then stream the header and `ds.Bytes` without copying the
+dataset:
+
+```go
+func (s *archive) StoreEncoded(ctx context.Context, ds dimse.EncodedDataSet, info dimse.OpInfo) dimse.Status {
+	var header bytes.Buffer
+	if err := ds.WriteFileMeta(&header, info, implementationUID); err != nil {
+		return dimse.StatusStoreCannotUnderstand
+	}
+	size := int64(header.Len() + len(ds.Bytes))
+	body := io.MultiReader(&header, bytes.NewReader(ds.Bytes))
+	if err := s.put(ctx, body, size); err != nil {
+		return dimse.StatusStoreOutOfResources
+	}
+	return dimse.StatusStoreSuccess
+}
+```
+
 ### Server observations
 
 Use `WithConnectionObserver(func(ConnectionEvent))` to observe inbound TCP admission, capacity refusal, and
