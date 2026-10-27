@@ -233,8 +233,8 @@ func WithDIMSETimeout(d time.Duration) AEOption       // default 30s — per-PDU
 func WithNetworkTimeout(d time.Duration) AEOption     // default 60s — idle association
 func WithConnectionTimeout(d time.Duration) AEOption  // default none — TCP connect
 func WithMaxPDULength(n MaxPDULength) AEOption         // default 16382; 0 = unlimited (see negotiation)
-func WithImplementationClassUID(uid dicom.UID) AEOption
-func WithImplementationVersionName(name string) AEOption
+func WithImplementationClassUID(uid dicom.UID) AEOption     // default dicom.ImplementationClassUID
+func WithImplementationVersionName(name string) AEOption   // default dicom.ImplementationVersionName (see below)
 func WithTLS(cfg *tls.Config) AEOption                // see "Transport security"
 
 // WithStoreHandler registers the sink for instances received as C-GET sub-operations (the requestor stores them
@@ -244,6 +244,12 @@ func WithStoreHandler(h StoreHandler) AEOption
 // WithCommitmentHandler registers the sink for the Storage Commitment N-EVENT-REPORT result.
 func WithCommitmentHandler(h CommitmentHandler) AEOption
 ```
+
+Every A-ASSOCIATE-RQ and A-ASSOCIATE-AC carries the Implementation Class UID sub-item, which PS3.7 D.3.3.2 makes
+mandatory in both. An `AE` without `WithImplementationClassUID`, or with an empty UID, advertises go-radx's identity:
+`dicom.ImplementationClassUID` with the version name `dicom.ImplementationVersionName`. The default version name applies
+only with the default UID, so an `AE` configured with its own UID sends no version name unless
+`WithImplementationVersionName` sets one. A peer that omits its implementation identity is still accepted.
 
 `WithDIMSETimeout` bounds *silence*, never operation duration: every PDU read and write on an
 established association arms a fresh window and drops it on completion, on both the SCU and SCP
@@ -799,8 +805,9 @@ type EncodedStoreHandler interface {
 }
 
 // WriteFileMeta writes the PS3.10 header: zero preamble, DICM, and File Meta Information built from the C-STORE
-// SOP Class/Instance UID, the negotiated transfer syntax, and implementationClassUID. A Part 10 file is that
-// header followed by ds.Bytes unchanged.
+// SOP Class/Instance UID, the negotiated transfer syntax, and implementationClassUID (empty writes
+// dicom.ImplementationClassUID and dicom.ImplementationVersionName). A Part 10 file is that header followed by
+// ds.Bytes unchanged.
 func (ds EncodedDataSet) WriteFileMeta(w io.Writer, info OpInfo, implementationClassUID dicom.UID) error
 ```
 

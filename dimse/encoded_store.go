@@ -36,8 +36,10 @@ type EncodedStoreHandler interface {
 
 // WriteFileMeta writes the PS3.10 header for a received dataset: a zero preamble, the DICM prefix,
 // and the File Meta Information built from the C-STORE (SOP Class and Instance UID, negotiated
-// transfer syntax) and implementationClassUID. The Part 10 file is that header followed by ds.Bytes
-// unchanged; the header is small, so a caller can buffer it to learn the file size.
+// transfer syntax) and implementationClassUID; an empty implementationClassUID writes go-radx's
+// identity (dicom.ImplementationClassUID and dicom.ImplementationVersionName). The Part 10 file is
+// that header followed by ds.Bytes unchanged; the header is small, so a caller can buffer it to
+// learn the file size.
 func (ds EncodedDataSet) WriteFileMeta(w io.Writer, info OpInfo, implementationClassUID dicom.UID) error {
 	instance, _ := ds.Prefix.GetString(dicom.TagSOPInstanceUID)
 	return dicom.WriteFileMeta(w, [128]byte{}, &dicom.FileMeta{

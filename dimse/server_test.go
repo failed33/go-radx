@@ -939,58 +939,130 @@ func TestNewServerAcceptsEchoOnlyHandler(t *testing.T) {
 }
 
 // TestServerAdvertisesImplementationIdentity is the named regression (P2 adversarial review): the
-// Server must propagate the AE's configured Implementation Class UID and Implementation Version
-// Name into the A-ASSOCIATE-AC it sends on an inbound association, mirroring the outbound SCU side.
-// An SCU associating to such a Server must see those values in the accepted association's user
-// information.
+// Server must propagate the AE's Implementation Class UID and Implementation Version Name into the
+// A-ASSOCIATE-AC it sends on an inbound association, mirroring the outbound SCU side. The class UID
+// is mandatory in the AC (PS3.7 D.3.3.2), so an AE without WithImplementationClassUID advertises
+// go-radx's identity, and an AE with its own UID does not borrow go-radx's version name.
 func TestServerAdvertisesImplementationIdentity(t *testing.T) {
-	const (
-		implClassUID = dicom.UID("1.2.840.99999.1")
-		implVersion  = "GO-RADX-TEST"
-	)
-
-	ae, err := NewAE(
-		AETitle("RADX-SCP"),
-		WithImplementationClassUID(implClassUID),
-		WithImplementationVersionName(implVersion),
-	)
-	if err != nil {
-		t.Fatalf("NewAE: %v", err)
+	tests := []struct {
+		name        string
+		opts        []AEOption
+		wantClass   dicom.UID
+		wantVersion string
+	}{
+		{"default", nil, dicom.ImplementationClassUID, dicom.ImplementationVersionName},
+		{"empty override keeps default", []AEOption{WithImplementationClassUID("")}, dicom.ImplementationClassUID, dicom.ImplementationVersionName},
+		{"configured", []AEOption{
+			WithImplementationClassUID("1.2.840.99999.1"),
+			WithImplementationVersionName("GO-RADX-TEST"),
+		}, "1.2.840.99999.1", "GO-RADX-TEST"},
+		{"configured UID only", []AEOption{WithImplementationClassUID("1.2.840.99999.1")}, "1.2.840.99999.1", ""},
 	}
-	contexts := echoAndStorageContexts()
-	srv := NewServer(ae, contexts, &serverTestHandler{echoStatus: StatusEchoSuccess, storeStatus: StatusStoreSuccess})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ae, err := NewAE(AETitle("RADX-SCP"), tt.opts...)
+			if err != nil {
+				t.Fatalf("NewAE: %v", err)
+			}
+			contexts := echoAndStorageContexts()
+			srv := NewServer(ae, contexts, &serverTestHandler{echoStatus: StatusEchoSuccess, storeStatus: StatusStoreSuccess})
 
-	served := make(chan error, 1)
-	go func() { served <- srv.ListenAndServe(context.Background(), "127.0.0.1:0") }()
-	waitForAddr(t, srv)
-	t.Cleanup(func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		_ = srv.Shutdown(ctx)
-		select {
-		case <-served:
-		case <-time.After(5 * time.Second):
-			t.Error("ListenAndServe did not return after Shutdown")
-		}
-	})
+			served := make(chan error, 1)
+			go func() { served <- srv.ListenAndServe(context.Background(), "127.0.0.1:0") }()
+			waitForAddr(t, srv)
+			t.Cleanup(func() {
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cancel()
+				_ = srv.Shutdown(ctx)
+				select {
+				case <-served:
+				case <-time.After(5 * time.Second):
+					t.Error("ListenAndServe did not return after Shutdown")
+				}
+			})
 
-	scu, err := NewAE(AETitle("RADX-SCU"))
-	if err != nil {
-		t.Fatalf("NewAE (SCU): %v", err)
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	assoc, err := scu.Associate(ctx, srv.Addr().String(), AETitle("RADX-SCP"), contexts)
-	if err != nil {
-		t.Fatalf("Associate: %v", err)
-	}
-	defer func() { _ = assoc.Release(ctx) }()
+			scu, err := NewAE(AETitle("RADX-SCU"))
+			if err != nil {
+				t.Fatalf("NewAE (SCU): %v", err)
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			assoc, err := scu.Associate(ctx, srv.Addr().String(), AETitle("RADX-SCP"), contexts)
+			if err != nil {
+				t.Fatalf("Associate: %v", err)
+			}
+			defer func() { _ = assoc.Release(ctx) }()
 
-	if got := assoc.PeerImplementationClassUID(); got != implClassUID {
-		t.Errorf("peer Implementation Class UID = %q, want %q", got, implClassUID)
+			if got := assoc.PeerImplementationClassUID(); got != tt.wantClass {
+				t.Errorf("peer Implementation Class UID = %q, want %q", got, tt.wantClass)
+			}
+			if got := assoc.PeerImplementationVersionName(); got != tt.wantVersion {
+				t.Errorf("peer Implementation Version Name = %q, want %q", got, tt.wantVersion)
+			}
+		})
 	}
-	if got := assoc.PeerImplementationVersionName(); got != implVersion {
-		t.Errorf("peer Implementation Version Name = %q, want %q", got, implVersion)
+}
+
+// TestAssociateRequestCarriesImplementationIdentity checks the outbound side on the wire: every
+// A-ASSOCIATE-RQ carries the mandatory Implementation Class UID sub-item (0x52), go-radx's when the
+// AE configures none (PS3.7 D.3.3.2).
+func TestAssociateRequestCarriesImplementationIdentity(t *testing.T) {
+	tests := []struct {
+		name        string
+		opts        []AEOption
+		wantClass   string
+		wantVersion string
+	}{
+		{"default", nil, string(dicom.ImplementationClassUID), dicom.ImplementationVersionName},
+		{"configured", []AEOption{
+			WithImplementationClassUID("1.2.840.99999.1"),
+			WithImplementationVersionName("GO-RADX-TEST"),
+		}, "1.2.840.99999.1", "GO-RADX-TEST"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ln, err := net.Listen("tcp", "127.0.0.1:0")
+			if err != nil {
+				t.Fatalf("listen: %v", err)
+			}
+			t.Cleanup(func() { ln.Close() })
+			captured := make(chan pdu.PDU, 1)
+			go func() {
+				c, aerr := ln.Accept()
+				if aerr != nil {
+					return
+				}
+				defer c.Close()
+				p, _ := pdu.ReadPDU(c)
+				captured <- p
+			}()
+
+			ae, err := NewAE(AETitle("RADX-SCU"), tt.opts...)
+			if err != nil {
+				t.Fatalf("NewAE: %v", err)
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			// The capturing peer closes without answering, so the association itself fails.
+			_, _ = ae.Associate(ctx, ln.Addr().String(), AETitle("RADX-SCP"), VerificationContexts())
+
+			var rq *pdu.AssociateRQ
+			select {
+			case p := <-captured:
+				var ok bool
+				if rq, ok = p.(*pdu.AssociateRQ); !ok {
+					t.Fatalf("first PDU = %T, want *pdu.AssociateRQ", p)
+				}
+			case <-ctx.Done():
+				t.Fatal("no A-ASSOCIATE-RQ received")
+			}
+			if rq.UserInfo.ImplementationClassUID != tt.wantClass {
+				t.Errorf("RQ Implementation Class UID = %q, want %q", rq.UserInfo.ImplementationClassUID, tt.wantClass)
+			}
+			if rq.UserInfo.ImplementationVersion != tt.wantVersion {
+				t.Errorf("RQ Implementation Version Name = %q, want %q", rq.UserInfo.ImplementationVersion, tt.wantVersion)
+			}
+		})
 	}
 }
 

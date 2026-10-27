@@ -743,6 +743,20 @@ unchanged:
 func WriteFileMeta(w io.Writer, preamble [128]byte, meta *FileMeta) error
 ```
 
+`(0002,0012)` Implementation Class UID is Type 1 and must identify a real implementation (PS3.10 §7.1). When
+`meta.ImplementationClassUID` is empty, the writer uses go-radx's own identity: `ImplementationClassUID`, a fixed
+UUID-derived UID under the `2.25` root (PS3.5 B.2), and, unless `meta.Elements` already carries `(0002,0013)`,
+`ImplementationVersionName`. A caller-supplied class UID is written as given and is never paired with go-radx's version
+name. Package `dimse` advertises the same identity in association negotiation. The reader accepts any or no
+implementation identity.
+
+```go
+const (
+    ImplementationClassUID    UID = "2.25.169668526432250226257622507883463309733"
+    ImplementationVersionName     = "GO_RADX"
+)
+```
+
 ## Transfer syntaxes
 
 `TransferSyntax` is the UID-identified encoding: byte order, implicit-versus-explicit VR, and compression. It is the

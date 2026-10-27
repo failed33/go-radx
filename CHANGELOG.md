@@ -114,6 +114,14 @@ legacy codebase (`legacy-main`) and are not continued here.
   Late value or sink errors may leave partial output, which callers must discard.
   ([#1](https://github.com/failed33/go-radx/pull/1))
 
+### Fixed
+
+- go-radx now has its own implementation identity, `dicom.ImplementationClassUID` (a fixed `2.25` UUID-derived UID)
+  and `dicom.ImplementationVersionName` (`GO_RADX`). Every `dimse` A-ASSOCIATE-RQ and -AC carries the mandatory
+  Implementation Class UID sub-item (PS3.7 D.3.3.2), which an AE without `WithImplementationClassUID` previously
+  omitted, and Part 10 File Meta writes it to `(0002,0012)` instead of the non-identifying `2.25.0`. An empty override
+  keeps the default; the default version name accompanies only the default UID.
+
 ## [0.12.0] - 2026-08-28
 
 ### Changed
