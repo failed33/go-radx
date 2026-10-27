@@ -1,6 +1,6 @@
 [tools]
 go = "1.27.3"
-golangci-lint = "2.12.2"
+golangci-lint = "2.15.0"
 
 [tasks."cover"]
 description = "Run the root-module race tests and write a single merged coverage profile (coverage.out)"
@@ -118,7 +118,7 @@ description = "Validate the go-radx FHIR R4 + R5 workflow sets with the pinned H
 run = "tools/fhir-conformance/validate.sh"
 
 [tasks."lint"]
-description = "Run golangci-lint (2.x, Go 1.26 compatible)"
+description = "Run golangci-lint (2.x, Go 1.27 compatible)"
 run = "golangci-lint run ./..."
 
 [tasks."pin-drift"]

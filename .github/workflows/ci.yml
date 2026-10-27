@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: jdx/mise-action@v3 # installs Go 1.26 + golangci-lint 2.12.2 per mise.toml [tools]
+      - uses: jdx/mise-action@v3 # installs Go 1.27 + golangci-lint 2.15.0 per mise.toml [tools]
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
       # Pin the Go module and build caches to fixed runner-temp paths (OFF the checked-out workspace,
@@ -162,7 +162,7 @@ jobs:
       CI: "true" # flips tools/fhir-conformance/validate.sh from skip-locally to fail-if-absent
     steps:
       - uses: actions/checkout@v5
-      - uses: jdx/mise-action@v3 # installs Go 1.26 per mise.toml [tools]; the gate runs `go run` for the fixtures
+      - uses: jdx/mise-action@v3 # installs Go 1.27 per mise.toml [tools]; the gate runs `go run` for the fixtures
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
       # Pin Go caches to runner-temp via a step (the runner context is invalid in a job-level env).
@@ -281,7 +281,7 @@ jobs:
         working-directory: cmd/radx
     steps:
       - uses: actions/checkout@v5
-      - uses: jdx/mise-action@v3 # installs Go 1.26 + golangci-lint 2.12.2 per mise.toml [tools]
+      - uses: jdx/mise-action@v3 # installs Go 1.27 + golangci-lint 2.15.0 per mise.toml [tools]
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
       # Pin the Go caches to runner-temp via a step (the runner context is invalid in a job-level env).
