@@ -45,15 +45,23 @@ func startFHIRDaemon(t *testing.T, release fhir.Release) (string, func()) {
 	waitForAddrs(t, d, "fhir@/fhir")
 
 	base := "http://" + d.Addrs()["fhir@/fhir"].String() + "/fhir"
-	cleanup := func() {
-		cancelRun()
-		select {
-		case <-runErr:
-		case <-time.After(5 * time.Second):
-			t.Error("daemon did not stop within 5s")
-		}
+	return base, func() { stopHTTPDaemon(t, cancelRun, runErr) }
+}
+
+// stopHTTPDaemon stops a daemon started for an HTTP role test and fails the test if it does not drain
+// within 5s. It first drops http.DefaultClient's pooled connections, as httptest.Server.Close does:
+// the Transport can dial a spare connection that loses the race to a just-released one and park it
+// unused, and the server holds such a connection in StateNew, which Server.Shutdown only reaps after
+// 5s — so the drain would otherwise hinge on client pooling timing rather than on the daemon.
+func stopHTTPDaemon(t *testing.T, cancelRun context.CancelFunc, runErr <-chan error) {
+	t.Helper()
+	http.DefaultClient.CloseIdleConnections()
+	cancelRun()
+	select {
+	case <-runErr:
+	case <-time.After(5 * time.Second):
+		t.Error("daemon did not stop within 5s")
 	}
-	return base, cleanup
 }
 
 // httpDo issues a request and returns the status, body, and Location header, the small client the
@@ -249,15 +257,7 @@ func startFHIRDaemonAt(t *testing.T, release fhir.Release, basePath string) (str
 	roleName := role.name()
 	waitForAddrs(t, d, roleName)
 	host := "http://" + d.Addrs()[roleName].String()
-	cleanup := func() {
-		cancelRun()
-		select {
-		case <-runErr:
-		case <-time.After(5 * time.Second):
-			t.Error("daemon did not stop within 5s")
-		}
-	}
-	return host, cleanup
+	return host, func() { stopHTTPDaemon(t, cancelRun, runErr) }
 }
 
 // TestFHIRRoleRootMountLocationIsSingleSlash proves a create against a root-mounted ("/") FHIR role
@@ -338,14 +338,7 @@ func TestDaemonExposesTwoFHIRRolesDistinctly(t *testing.T) {
 	runCtx, cancelRun := context.WithCancel(context.Background())
 	runErr := make(chan error, 1)
 	go func() { runErr <- d.Run(runCtx) }()
-	defer func() {
-		cancelRun()
-		select {
-		case <-runErr:
-		case <-time.After(5 * time.Second):
-			t.Error("daemon did not stop within 5s")
-		}
-	}()
+	defer stopHTTPDaemon(t, cancelRun, runErr)
 
 	r4Name, r5Name := r4Role.name(), r5Role.name()
 	if r4Name == r5Name {
@@ -1101,14 +1094,7 @@ func TestFHIRRoleAuthRejectionIsOperationOutcome(t *testing.T) {
 	runErr := make(chan error, 1)
 	go func() { runErr <- d.Run(runCtx) }()
 	waitForAddrs(t, d, "fhir@/fhir")
-	defer func() {
-		cancelRun()
-		select {
-		case <-runErr:
-		case <-time.After(5 * time.Second):
-			t.Error("daemon did not stop within 5s")
-		}
-	}()
+	defer stopHTTPDaemon(t, cancelRun, runErr)
 
 	bound := d.Addrs()["fhir@/fhir"]
 	if bound == nil {

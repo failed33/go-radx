@@ -11,7 +11,6 @@ import (
 	"strings"
 	"sync"
 	"testing"
-	"time"
 
 	"go.uber.org/zap"
 
@@ -252,14 +251,7 @@ func TestFHIRCreateAuditEvent(t *testing.T) {
 	runCtx, cancelRun := context.WithCancel(context.Background())
 	runErr := make(chan error, 1)
 	go func() { runErr <- d.Run(runCtx) }()
-	defer func() {
-		cancelRun()
-		select {
-		case <-runErr:
-		case <-time.After(5 * time.Second):
-			t.Error("daemon did not stop within 5s")
-		}
-	}()
+	defer stopHTTPDaemon(t, cancelRun, runErr)
 	waitForAddrs(t, d, "fhir@/fhir")
 	base := "http://" + d.Addrs()["fhir@/fhir"].String() + "/fhir"
 
@@ -336,14 +328,7 @@ func TestFHIRUpdateDeleteAuditEvents(t *testing.T) {
 	runCtx, cancelRun := context.WithCancel(context.Background())
 	runErr := make(chan error, 1)
 	go func() { runErr <- d.Run(runCtx) }()
-	defer func() {
-		cancelRun()
-		select {
-		case <-runErr:
-		case <-time.After(5 * time.Second):
-			t.Error("daemon did not stop within 5s")
-		}
-	}()
+	defer stopHTTPDaemon(t, cancelRun, runErr)
 	waitForAddrs(t, d, "fhir@/fhir")
 	base := "http://" + d.Addrs()["fhir@/fhir"].String() + "/fhir"
 

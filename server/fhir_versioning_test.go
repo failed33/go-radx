@@ -40,15 +40,7 @@ func startFHIRDaemonRepo(t *testing.T, release fhir.Release, repo Repository) (s
 	go func() { runErr <- d.Run(runCtx) }()
 	waitForAddrs(t, d, "fhir@/fhir")
 	base := "http://" + d.Addrs()["fhir@/fhir"].String() + "/fhir"
-	cleanup := func() {
-		cancelRun()
-		select {
-		case <-runErr:
-		case <-time.After(5 * time.Second):
-			t.Error("daemon did not stop within 5s")
-		}
-	}
-	return base, cleanup
+	return base, func() { stopHTTPDaemon(t, cancelRun, runErr) }
 }
 
 // createPatient POSTs a Patient and returns its server-assigned id.
