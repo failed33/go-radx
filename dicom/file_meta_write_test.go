@@ -13,8 +13,8 @@ func TestWriteFileMetaRoundTrip(t *testing.T) {
 		ImplementationClassUID:     "1.2.3.4.5",
 	}
 	var buf bytes.Buffer
-	if err := writeFileMeta(&buf, [128]byte{}, meta); err != nil {
-		t.Fatalf("writeFileMeta: %v", err)
+	if err := WriteFileMeta(&buf, [128]byte{}, meta); err != nil {
+		t.Fatalf("WriteFileMeta: %v", err)
 	}
 
 	br := newBoundedReader(bytes.NewReader(buf.Bytes()), defaultMaxElementLen)
@@ -47,8 +47,8 @@ func TestWriteFileMetaGroupLengthIsExact(t *testing.T) {
 		ImplementationClassUID:     "1.2.3.4.5",
 	}
 	var buf bytes.Buffer
-	if err := writeFileMeta(&buf, [128]byte{}, meta); err != nil {
-		t.Fatalf("writeFileMeta: %v", err)
+	if err := WriteFileMeta(&buf, [128]byte{}, meta); err != nil {
+		t.Fatalf("WriteFileMeta: %v", err)
 	}
 	raw := buf.Bytes()
 
@@ -90,8 +90,8 @@ func TestWriteFileMetaRecomputesStaleGroupLength(t *testing.T) {
 		Elements:                elems,
 	}
 	var buf bytes.Buffer
-	if err := writeFileMeta(&buf, [128]byte{}, meta); err != nil {
-		t.Fatalf("writeFileMeta: %v", err)
+	if err := WriteFileMeta(&buf, [128]byte{}, meta); err != nil {
+		t.Fatalf("WriteFileMeta: %v", err)
 	}
 	br := newBoundedReader(bytes.NewReader(buf.Bytes()), defaultMaxElementLen)
 	if _, err := readPreamble(br); err != nil {

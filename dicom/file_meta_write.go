@@ -19,11 +19,13 @@ var fileMetaInformationVersion = []byte{0x00, 0x01}
 // needs no organisational registration (PS3.5 §9.2).
 const implementationClassUIDDefault UID = "2.25.0"
 
-// writeFileMeta serialises the preamble, DICM magic, and the File Meta Information
+// WriteFileMeta serialises the preamble, DICM magic, and the File Meta Information
 // group (always Explicit VR LE) with an auto-recomputed (0002,0000) Group Length
 // written first (Codex DCM-001). Any (0002,0000) in meta.Elements is ignored and
-// recomputed, never trusted.
-func writeFileMeta(w io.Writer, preamble [128]byte, meta *FileMeta) error {
+// recomputed, never trusted. A Part 10 file is this header followed by the main
+// dataset encoded in meta.TransferSyntaxUID, so a caller already holding those
+// encoded bytes writes them after it unchanged (PS3.10 §7.1).
+func WriteFileMeta(w io.Writer, preamble [128]byte, meta *FileMeta) error {
 	group, err := buildFileMetaGroup(meta)
 	if err != nil {
 		return err

@@ -33,7 +33,7 @@ func readDataSet(br *boundedReader, ts TransferSyntax, cfg readConfig) (*DataSet
 			return nil, err
 		}
 
-		if cfg.stopAtPixelData && h.tag == TagPixelData {
+		if cfg.stopAtTag != 0 && h.tag >= cfg.stopAtTag {
 			return ds, nil
 		}
 

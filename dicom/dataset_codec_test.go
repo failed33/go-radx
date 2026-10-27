@@ -123,6 +123,31 @@ func TestReadDataSetStopAtPixelData(t *testing.T) {
 	}
 }
 
+// TestDecodeDataSetStopAtTag proves the stop leaves every byte from the first element at or above
+// the stop tag unread: the truncated trailing element would fail a full decode.
+func TestDecodeDataSetStopAtTag(t *testing.T) {
+	ts := ExplicitVRLittleEndian
+	var raw bytes.Buffer
+	raw.Write(buildElement(t, ts, TagSOPInstanceUID, VRUI, NewStrings(VRUI, "1.2.3")))
+	raw.Write(buildElement(t, ts, TagSeriesInstanceUID, VRUI, NewStrings(VRUI, "1.2.3.4")))
+	trailing := buildElement(t, ts, NewTag(0x0020, 0x0013), VRIS, NewStrings(VRIS, "7"))
+	raw.Write(trailing[:len(trailing)-1])
+
+	if _, err := DecodeDataSet(bytes.NewReader(raw.Bytes()), ts); err == nil {
+		t.Fatal("full decode of the truncated stream = nil error, want a truncation")
+	}
+	ds, err := DecodeDataSet(bytes.NewReader(raw.Bytes()), ts, WithStopAtTag(TagSeriesInstanceUID+1))
+	if err != nil {
+		t.Fatalf("DecodeDataSet with stop: %v", err)
+	}
+	if got, _ := ds.GetString(TagSeriesInstanceUID); got != "1.2.3.4" {
+		t.Errorf("Series Instance UID = %q, want 1.2.3.4", got)
+	}
+	if ds.Len() != 2 {
+		t.Errorf("Len = %d, want the 2 elements before the stop tag", ds.Len())
+	}
+}
+
 func TestWriteDataSetRoundTrip(t *testing.T) {
 	for _, ts := range []TransferSyntax{ExplicitVRLittleEndian, ImplicitVRLittleEndian, ExplicitVRBigEndian} {
 		t.Run(ts.Name(), func(t *testing.T) {

@@ -75,7 +75,7 @@ func TestWriteMatchesBufferedPart10(t *testing.T) {
 			if err := writeDataSet(&main, file.DataSet, file.Meta.TransferSyntaxUID); err != nil {
 				t.Fatal(err)
 			}
-			if err := writeFileMeta(&previous, file.Preamble, file.Meta); err != nil {
+			if err := WriteFileMeta(&previous, file.Preamble, file.Meta); err != nil {
 				t.Fatal(err)
 			}
 			if file.Meta.TransferSyntaxUID.IsDeflated() {
@@ -121,7 +121,7 @@ func TestWritePreservesLateSinkError(t *testing.T) {
 		t.Run(ts.Name(), func(t *testing.T) {
 			file := sampleFile(ts)
 			var header bytes.Buffer
-			if err := writeFileMeta(&header, file.Preamble, file.Meta); err != nil {
+			if err := WriteFileMeta(&header, file.Preamble, file.Meta); err != nil {
 				t.Fatal(err)
 			}
 			failure := errors.New("synthetic sink failure")

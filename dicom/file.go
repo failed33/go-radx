@@ -26,7 +26,9 @@ type readConfig struct {
 	maxElementLen    uint32
 	maxInflatedBytes int64
 	maxSequenceDepth int
-	stopAtPixelData  bool
+	// stopAtTag ends a dataset read before the first top-level element whose tag
+	// is >= stopAtTag; zero reads to the end.
+	stopAtTag Tag
 	// defaultCharSet is the fallback Specific Character Set defined terms applied to
 	// customisable text VRs when the dataset has no (0008,0005). Empty means the
 	// default repertoire (ISO 646).
@@ -120,7 +122,17 @@ func WithMaxSequenceDepth(n int) ReadOption {
 
 // WithStopAtPixelData defers the pixel-data element for a partial read.
 func WithStopAtPixelData() ReadOption {
-	return func(c *readConfig) { c.stopAtPixelData = true }
+	return WithStopAtTag(TagPixelData)
+}
+
+// WithStopAtTag ends the main-dataset read before the first top-level element whose
+// tag is t or higher (DCMTK's loadFileUntilTag semantics). The element's header is
+// read to find the boundary; its value and every later byte are left unread and
+// unvalidated, so a caller needing only the leading attributes does not pay for
+// the rest of the dataset. Elements inside sequence items are not compared. A zero
+// tag disables the stop.
+func WithStopAtTag(t Tag) ReadOption {
+	return func(c *readConfig) { c.stopAtTag = t }
 }
 
 // WithDeferredValues defers element values larger than threshold bytes (pydicom's

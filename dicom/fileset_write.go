@@ -295,7 +295,7 @@ func (b *FileSetBuilder) assembleDICOMDIR(patients, flat []*recordNode) (*FileMe
 		TransferSyntaxUID:          ExplicitVRLittleEndian,
 	}
 	var metaBuf bytes.Buffer
-	if err := writeFileMeta(&metaBuf, [128]byte{}, meta); err != nil {
+	if err := WriteFileMeta(&metaBuf, [128]byte{}, meta); err != nil {
 		return nil, nil, err
 	}
 

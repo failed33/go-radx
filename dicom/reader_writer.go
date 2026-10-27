@@ -135,7 +135,7 @@ func Write(w io.Writer, f *File, opts ...WriteOption) error {
 		return err
 	}
 
-	if err := writeFileMeta(w, f.Preamble, f.Meta); err != nil {
+	if err := WriteFileMeta(w, f.Preamble, f.Meta); err != nil {
 		return err
 	}
 
