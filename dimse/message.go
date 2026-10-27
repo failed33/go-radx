@@ -124,6 +124,11 @@ type messageReassembler struct {
 	datasetBytes   []byte
 	commandLast    bool
 	expectsDataset bool
+	// encodedStore is set when the SCP handler implements EncodedStoreHandler; keepEncoded is set
+	// once a C-STORE-RQ command is decoded under it. Such a dataset is decoded only up to
+	// encodedPrefixStop and its datasetBytes are handed to the handler as received.
+	encodedStore bool
+	keepEncoded  bool
 
 	command *CommandSet
 	dataset *dicom.DataSet
@@ -191,7 +196,11 @@ func (r *messageReassembler) add(item pdu.PresentationDataValue) (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		ds, err := dicom.DecodeDataSet(bytes.NewReader(r.datasetBytes), ts)
+		var opts []dicom.ReadOption
+		if r.keepEncoded {
+			opts = append(opts, dicom.WithStopAtTag(encodedPrefixStop))
+		}
+		ds, err := dicom.DecodeDataSet(bytes.NewReader(r.datasetBytes), ts, opts...)
 		if err != nil {
 			return false, &ProtocolError{State: Sta6, Detail: "decoding C-STORE dataset with the negotiated transfer syntax: " + err.Error()}
 		}
@@ -225,7 +234,17 @@ func (r *messageReassembler) decodeCommand() error {
 	r.command = &cmd
 	r.commandLast = true
 	r.expectsDataset = cmd.HasDataSet()
+	r.keepEncoded = r.encodedStore && cmd.CommandField == CommandCStoreRQ
 	return nil
+}
+
+// encodedDataset returns the dataset bytes as received when the message is a C-STORE kept encoded
+// for an EncodedStoreHandler, and nil otherwise.
+func (r *messageReassembler) encodedDataset() []byte {
+	if !r.keepEncoded {
+		return nil
+	}
+	return r.datasetBytes
 }
 
 // complete reports whether the whole message has arrived: the command is decoded, and either no

@@ -57,12 +57,13 @@ func dispatchAssociation(ctx context.Context, conn *dul.Conn, params acse.Accept
 	calling := AETitle(acc.CallingAETitle())
 	called := AETitle(acc.CalledAETitle())
 	resolveTS := acceptedTransferSyntaxResolver(acc)
+	_, encodedStore := h.(EncodedStoreHandler)
 
 	for {
 		if err := ctx.Err(); err != nil {
 			return connectionEnd{reason: ConnectionServerStopped, err: err}
 		}
-		cmd, ds, pcID, kind, err := readInbound(ctx, acc, resolveTS)
+		cmd, ds, encoded, pcID, kind, err := readInbound(ctx, acc, resolveTS, encodedStore)
 		if err != nil {
 			return connectionFailure(ctx, ConnectionReceive, err)
 		}
@@ -88,7 +89,7 @@ func dispatchAssociation(ctx context.Context, conn *dul.Conn, params acse.Accept
 			}
 			return connectionEnd{reason: reason, err: conn.Close()}
 		case inboundMessage:
-			if derr := dispatchMessage(ctx, acc, h, move, cmd, ds, pcID, calling, called); derr != nil {
+			if derr := dispatchMessage(ctx, acc, h, move, cmd, ds, encoded, pcID, calling, called); derr != nil {
 				return connectionFailure(ctx, ConnectionProcess, derr)
 			}
 		}
@@ -109,7 +110,8 @@ const (
 // through dul.DriveInbound (the shared inbound hardening) and either reassembles a complete DIMSE
 // message from one or more P-DATA-TF PDUs, or reports an A-RELEASE-RQ / A-ABORT / orderly close.
 // A protocol violation surfaces as a typed error (DriveInbound has already sent the provider
-// A-ABORT); a clean io.EOF reports inboundClosed.
+// A-ABORT); a clean io.EOF reports inboundClosed. With encodedStore a C-STORE dataset is decoded
+// only up to encodedPrefixStop and its received bytes are returned alongside that prefix.
 //
 // The connection's idle bound (Conn.SetIdleTimeout, armed from networkTimeout at association
 // establishment) bounds EACH inbound PDU read individually — it is the AE's IDLE-association
@@ -122,38 +124,40 @@ func readInbound(
 	ctx context.Context,
 	acc *acse.Acceptor,
 	resolveTS func(pcID uint8) (dicom.TransferSyntax, error),
-) (CommandSet, *dicom.DataSet, uint8, inboundKind, error) {
+	encodedStore bool,
+) (CommandSet, *dicom.DataSet, []byte, uint8, inboundKind, error) {
 	conn := acc.Conn()
 	m := acc.Machine()
 	r := newMessageReassemblerFunc(resolveTS)
+	r.encodedStore = encodedStore
 	for {
 		p, _, err := dul.DriveInbound(ctx, conn, m)
 		if err != nil {
 			if errors.Is(err, io.EOF) {
-				return CommandSet{}, nil, 0, inboundClosed, nil
+				return CommandSet{}, nil, nil, 0, inboundClosed, nil
 			}
-			return CommandSet{}, nil, 0, inboundClosed, translateInboundError(m, err)
+			return CommandSet{}, nil, nil, 0, inboundClosed, translateInboundError(m, err)
 		}
 		switch pv := p.(type) {
 		case *pdu.DataTF:
 			for _, item := range pv.Items {
 				done, aerr := r.add(item)
 				if aerr != nil {
-					return CommandSet{}, nil, 0, inboundClosed, aerr
+					return CommandSet{}, nil, nil, 0, inboundClosed, aerr
 				}
 				if done {
-					return *r.command, r.dataset, r.pcID, inboundMessage, nil
+					return *r.command, r.dataset, r.encodedDataset(), r.pcID, inboundMessage, nil
 				}
 			}
 		case *pdu.ReleaseRQ:
-			return CommandSet{}, nil, 0, inboundReleased, nil
+			return CommandSet{}, nil, nil, 0, inboundReleased, nil
 		case *pdu.Abort:
-			return CommandSet{}, nil, 0, inboundAborted, nil
+			return CommandSet{}, nil, nil, 0, inboundAborted, nil
 		default:
 			// A recognised-but-unexpected PDU in Sta6 drives AA-8 inside DriveInbound, which
 			// returns a *StateError translated above; reaching here means a PDU type with a
 			// defined non-fault transition we do not consume during data transfer.
-			return CommandSet{}, nil, 0, inboundClosed, &ProtocolError{
+			return CommandSet{}, nil, nil, 0, inboundClosed, &ProtocolError{
 				State:  m.CurrentState(),
 				Detail: "unexpected " + p.Type().String() + " on an established association",
 			}
@@ -167,7 +171,8 @@ func readInbound(
 // gracefully with a StatusSOPClassNotSupported RSP rather than panicking or accepting (interface
 // segregation, PRD §8.2). A command field this SCP services no capability for is answered as a
 // protocol fault rather than silently dropped. The Echo and Store paths reuse the shared dispatch
-// primitives (serveEchoCommand / serveStoreMessage) so the response logic lives in one place.
+// primitives (serveEchoCommand / serveStoreMessage) so the response logic lives in one place. A
+// C-STORE goes to an EncodedStoreHandler with its received bytes when h implements one.
 func dispatchMessage(
 	ctx context.Context,
 	acc *acse.Acceptor,
@@ -175,6 +180,7 @@ func dispatchMessage(
 	move moveSupport,
 	cmd CommandSet,
 	ds *dicom.DataSet,
+	encoded []byte,
 	pcID uint8,
 	calling, called AETitle,
 ) error {
@@ -197,6 +203,10 @@ func dispatchMessage(
 		_, err := serveEchoCommand(ctx, acc, eh, cmd, pcID, base)
 		return err
 	case CommandCStoreRQ:
+		if eh, ok := h.(EncodedStoreHandler); ok {
+			_, err := serveStoreMessage(ctx, acc, encodedStoreAdapter{h: eh, encoded: encoded}, cmd, ds, pcID, base)
+			return err
+		}
 		sh, ok := h.(StoreHandler)
 		if !ok {
 			return refuseUnsupportedStore(ctx, acc, cmd, pcID)
