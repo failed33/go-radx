@@ -3,7 +3,7 @@ package acse
 import (
 	"fmt"
 
-	"github.com/codeninja55/go-radx/dimse/dul"
+	"github.com/failed33/go-radx/dimse/dul"
 )
 
 // RejectedError reports an A-ASSOCIATE-RJ: the peer refused the association with a result

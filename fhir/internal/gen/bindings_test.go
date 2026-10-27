@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/codeninja55/go-radx/fhir/internal/gen/loader"
+	"github.com/failed33/go-radx/fhir/internal/gen/loader"
 )
 
 // TestNoEmptyRequiredBindingEnum is the empty-const-set guard: it fails if any

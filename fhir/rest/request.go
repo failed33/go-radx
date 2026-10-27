@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/codeninja55/go-radx/fhir"
+	"github.com/failed33/go-radx/fhir"
 )
 
 // response is the parsed result of one interaction: the HTTP status, the bytes of the body (capped

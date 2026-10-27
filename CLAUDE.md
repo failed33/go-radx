@@ -122,7 +122,7 @@ You must understand these healthcare standards and workflows:
 ### Development Environment
 
 - **Go Version**: 1.26.x (managed via mise - see `mise.toml`)
-- **Module**: `github.com/codeninja55/go-radx`
+- **Module**: `github.com/failed33/go-radx`
 
 ### Coding Best Practices
 

@@ -4,9 +4,9 @@ import (
 	"context"
 	"iter"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dicomweb"
-	"github.com/codeninja55/go-radx/dimse"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dicomweb"
+	"github.com/failed33/go-radx/dimse"
 )
 
 // queryCatalogue answers a query at q.Level, applying the full DICOM match across BOTH the catalogue's

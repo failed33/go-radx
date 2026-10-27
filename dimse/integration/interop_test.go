@@ -20,9 +20,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse"
-	"github.com/codeninja55/go-radx/dimse/integration/orthanc"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse"
+	"github.com/failed33/go-radx/dimse/integration/orthanc"
 )
 
 // storeFixture is a vendored, uncompressed (Explicit VR Little Endian) MR Image Storage instance.

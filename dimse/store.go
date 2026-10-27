@@ -3,7 +3,7 @@ package dimse
 import (
 	"context"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // storeMessageID is the Message ID used for a single C-STORE request. A Store is one
@@ -118,9 +118,6 @@ func (a *Association) Store(ctx context.Context, ds *dicom.DataSet, opts ...Stor
 	conn := a.requestor.Conn()
 	m := a.requestor.Machine()
 
-	opCtx, cancel := a.dimseContext(ctx)
-	defer cancel()
-
 	msgID := storeMessageID
 	if cfg.hasMessageID {
 		msgID = cfg.messageID
@@ -139,11 +136,11 @@ func (a *Association) Store(ctx context.Context, ds *dicom.DataSet, opts ...Stor
 		rq.MoveOriginatorAETitle = cfg.moveOriginatorAE
 		rq.MoveOriginatorMessageID = cfg.moveOriginatorID
 	}
-	if err := sendMessage(opCtx, conn, m, pcID, rq, ds, ts, a.sendCap()); err != nil {
+	if err := sendMessage(ctx, conn, m, pcID, rq, ds, ts, a.sendCap()); err != nil {
 		return Status{}, err
 	}
 
-	rsp, _, _, err := receiveMessage(opCtx, conn, m, newMessageReassembler(ts))
+	rsp, _, _, err := receiveMessage(ctx, conn, m, newMessageReassembler(ts))
 	if err != nil {
 		return Status{}, err
 	}

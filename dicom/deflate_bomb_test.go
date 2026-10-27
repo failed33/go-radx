@@ -59,8 +59,8 @@ func deflateBombPart10(t *testing.T, elements int) []byte {
 		TransferSyntaxUID:          DeflatedExplicitVRLittleEndian,
 	}
 	var out bytes.Buffer
-	if err := writeFileMeta(&out, [128]byte{}, meta); err != nil {
-		t.Fatalf("writeFileMeta: %v", err)
+	if err := WriteFileMeta(&out, [128]byte{}, meta); err != nil {
+		t.Fatalf("WriteFileMeta: %v", err)
 	}
 	out.Write(deflate(t, deflateBombMainDataSet(t, elements)))
 	return out.Bytes()

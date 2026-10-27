@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"sync/atomic"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse/acse"
-	"github.com/codeninja55/go-radx/dimse/dul"
-	"github.com/codeninja55/go-radx/dimse/pdu"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/acse"
+	"github.com/failed33/go-radx/dimse/dul"
+	"github.com/failed33/go-radx/dimse/pdu"
 )
 
 // defaultMaxAssociations bounds concurrent inbound associations when WithMaxAssociations is not
@@ -21,6 +22,8 @@ const defaultMaxAssociations = 10
 // serverConfig holds the resolved Server options. There is no global mutable state (PRD §9.4);
 // every Server carries its own configuration, immutable after NewServer.
 type serverConfig struct {
+	connectionObserver     func(ConnectionEvent)
+	responseObserver       func(ResponseSendEvent)
 	maxAssociations        int
 	requireCalledAETitle   AETitle
 	requireCallingAETitles []AETitle
@@ -171,7 +174,8 @@ type Server struct {
 	// sem is the capacity semaphore: a slot is acquired before a per-association goroutine is
 	// spawned and released when it returns, so WithMaxAssociations bounds concurrency ahead of
 	// work (Codex DIMSE-013).
-	sem chan struct{}
+	sem              chan struct{}
+	nextConnectionID atomic.Uint64
 
 	mu       sync.Mutex
 	listener net.Listener
@@ -290,11 +294,13 @@ func (s *Server) acceptLoop(ctx context.Context, ln net.Listener) error {
 			continue
 		}
 
+		connectionID := s.nextConnectionID.Add(1)
 		// Acquire capacity before spawning. A full semaphore means every slot is in use, so the
 		// connection is refused (closed) here — no per-association goroutine is created for it.
 		select {
 		case s.sem <- struct{}{}:
 		default:
+			s.observeConnection(ConnectionEvent{Kind: ConnectionCapacityRefused, ConnectionID: connectionID, RemoteAddr: nc.RemoteAddr()})
 			_ = nc.Close()
 			continue
 		}
@@ -309,22 +315,30 @@ func (s *Server) acceptLoop(ctx context.Context, ln net.Listener) error {
 
 		// trackConn already did wg.Add(1) under s.mu (so the goroutine is counted before the
 		// connection is visible to Shutdown); this goroutine pairs it with wg.Done.
+		s.observeConnection(ConnectionEvent{Kind: ConnectionAccepted, ConnectionID: connectionID, RemoteAddr: nc.RemoteAddr()})
 		go func() {
+			var end connectionEnd
+			observation := &serverObservation{id: connectionID, conn: conn, response: s.cfg.responseObserver}
+			connectionCtx := context.WithValue(ctx, serverConnectionContextKey{}, observation)
 			defer s.wg.Done()
-			defer func() { <-s.sem }()
+			defer func() {
+				<-s.sem
+				s.observeConnection(ConnectionEvent{Kind: ConnectionClosed, ConnectionID: connectionID, RemoteAddr: nc.RemoteAddr(), Reason: end.reason, Operation: end.operation, Err: end.err})
+			}()
 			defer s.untrackConn(conn)
 			// Complete a TLS handshake (when this is a TLS listener) before any PDU is read. The
 			// handshake runs in this per-association goroutine, not the accept loop, so a slow peer
 			// cannot stall the listener; it is bounded explicitly because the read-deadline the PDU
 			// path sets does not cover the writes a handshake also performs (see handshakeAccepted).
 			if err := s.ae.handshakeAccepted(ctx, nc); err != nil {
+				end = connectionFailure(ctx, ConnectionEstablish, err)
 				// A failed or stalled handshake releases the slot (deferred) and closes the
 				// connection here, so a peer that opens TCP but never completes the handshake cannot
 				// hold a max-association slot past the negotiation bound.
 				_ = conn.Close()
 				return
 			}
-			s.serveConn(ctx, conn)
+			end = s.serveConn(connectionCtx, conn)
 		}()
 	}
 }
@@ -348,7 +362,7 @@ func (ae *AE) handshakeAccepted(ctx context.Context, nc net.Conn) error {
 // serveConn runs one association to completion (negotiate, dispatch, release/abort/close), closing
 // the connection when the dispatch returns. Errors are protocol/transport faults already handled by
 // the typed error path; the connection close is the terminal action either way.
-func (s *Server) serveConn(ctx context.Context, conn *dul.Conn) {
+func (s *Server) serveConn(ctx context.Context, conn *dul.Conn) connectionEnd {
 	params := acse.AcceptParams{
 		CalledAETitle:          string(s.ae.Title()),
 		MaxPDULength:           uint32(s.ae.config().maxPDULength),
@@ -376,15 +390,9 @@ func (s *Server) serveConn(ctx context.Context, conn *dul.Conn) {
 		Authenticate: s.authenticate(conn.RemoteAddr()),
 	}
 	move := moveSupport{ae: s.ae, destinations: s.cfg.moveDestinations}
-	if err := dispatchAssociation(ctx, conn, params, s.ae.config().acseTimeout, s.ae.config().networkTimeout, s.handler, move); err != nil {
-		// The association ended on a fault (rejection, abort, protocol error, or a connection the
-		// peer or Shutdown closed under us); the connection is closed below regardless. The error
-		// is intentionally not logged here (no logger wired into the skeleton yet) and never
-		// carries PHI by construction.
-		_ = conn.Close()
-		return
-	}
+	end := dispatchAssociation(ctx, conn, params, s.ae.config().acseTimeout, s.ae.config().networkTimeout, s.handler, move)
 	_ = conn.Close()
+	return end
 }
 
 // Shutdown stops accepting new associations and then drives a cooperative, then forced-wake,

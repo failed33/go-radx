@@ -3,7 +3,7 @@ package plan
 import (
 	"testing"
 
-	"github.com/codeninja55/go-radx/fhir/internal/gen/model"
+	"github.com/failed33/go-radx/fhir/internal/gen/model"
 )
 
 func TestGoFieldName(t *testing.T) {

@@ -5,7 +5,7 @@ package r4
 import (
 	"strconv"
 
-	"github.com/codeninja55/go-radx/fhir"
+	"github.com/failed33/go-radx/fhir"
 )
 
 // init registers a structural validation descriptor for every r4 resource with

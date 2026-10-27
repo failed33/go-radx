@@ -11,11 +11,11 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/codeninja55/go-radx/cmd/radx/internal/cli"
-	"github.com/codeninja55/go-radx/cmd/radx/internal/exitcode"
-	"github.com/codeninja55/go-radx/dimse"
-	"github.com/codeninja55/go-radx/logging"
-	"github.com/codeninja55/go-radx/server"
+	"github.com/failed33/go-radx/cmd/radx/internal/cli"
+	"github.com/failed33/go-radx/cmd/radx/internal/exitcode"
+	"github.com/failed33/go-radx/dimse"
+	"github.com/failed33/go-radx/logging"
+	"github.com/failed33/go-radx/server"
 )
 
 // ServeDIMSECmd runs the DIMSE Q/R archive reference daemon (dcmtk's dcmqrscp): the server

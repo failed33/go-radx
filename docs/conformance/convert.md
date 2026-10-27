@@ -10,7 +10,7 @@
 | Field | Value |
 |-------|-------|
 | Standards bridged | DICOM (NEMA PS3), HL7 v2.x, HL7 FHIR (R4 4.0.1, R5 5.0.0) |
-| Library | `github.com/codeninja55/go-radx` |
+| Library | `github.com/failed33/go-radx` |
 | Conformance version | 1 (scoped to the PRD §5.1 workflow loop) |
 | Status | Published (§5.1 loop) |
 | Scope authority | This document is the single source of truth for conversion scope (PRD §6.1) |

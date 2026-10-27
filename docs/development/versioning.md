@@ -19,7 +19,7 @@ go-radx follows [Semantic Versioning 2.0.0](https://semver.org/). A release is `
 - `PATCH` increments for backward-compatible fixes.
 
 The public API is the exported surface of the library packages (`dicom`, `dimse`, `dicomweb`,
-`hl7v2`, `fhir`, `convert`, `server`) reachable through `go get github.com/codeninja55/go-radx`. The
+`hl7v2`, `fhir`, `convert`, `server`) reachable through `go get github.com/failed33/go-radx`. The
 `internal/` tree and the `cmd/radx` CLI module are not part of the library's API-compatibility
 contract; the CLI has its own command and output contract documented under
 [`docs/reference/cli.md`](../reference/cli.md).
@@ -95,8 +95,8 @@ Go's module system encodes a major version of `2` or higher in the import path. 
 `v2.0.0`, the module path gains a `/v2` suffix:
 
 ```text
-v0.x and v1.x:  github.com/codeninja55/go-radx
-v2.x:           github.com/codeninja55/go-radx/v2
+v0.x and v1.x:  github.com/failed33/go-radx
+v2.x:           github.com/failed33/go-radx/v2
 ```
 
 This is the standard Go "semantic import versioning" rule: `v0` and `v1` share the unsuffixed path,

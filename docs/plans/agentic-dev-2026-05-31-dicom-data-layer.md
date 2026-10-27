@@ -15,7 +15,7 @@ aware Part 10 reader and writer are layered on top, then sequences, character se
 Profile de-identifier. The reader is built on a bounded reader so every length is validated against bytes actually
 remaining before any allocation; truncation is a failure, never a graceful EOF.
 
-**Tech Stack:** Go 1.26.3, module `github.com/codeninja55/go-radx`; standard library only for the core
+**Tech Stack:** Go 1.26.3, module `github.com/failed33/go-radx`; standard library only for the core
 (`encoding/binary`, `math/big`, `iter`, `crypto/rand`); `golang.org/x/text/encoding` for ISO 2022, GB18030, and GBK
 character sets; optional CGo (OpenJPEG, CharLS) behind a `//go:build cgo && radx_codecs` tag for JPEG-family pixel
 decode; `go.uber.org/zap` for diagnostics. Verification gates: `dciodvfy` (dcmtk) on written files and `pydicom`

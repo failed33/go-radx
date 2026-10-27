@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse"
-	"github.com/codeninja55/go-radx/dimse/integration/dcm4chee"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse"
+	"github.com/failed33/go-radx/dimse/integration/dcm4chee"
 )
 
 // TestInteropDcm4cheeMPPS is the M3 Modality Performed Procedure Step interop gate against

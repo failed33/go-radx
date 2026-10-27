@@ -8,7 +8,7 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // TestWADOURIRetrieveRoundTrip is the client↔server WADO-URI acceptance: a stored instance is

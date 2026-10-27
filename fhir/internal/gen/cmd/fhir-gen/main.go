@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/codeninja55/go-radx/fhir/internal/gen"
+	"github.com/failed33/go-radx/fhir/internal/gen"
 )
 
 func main() {

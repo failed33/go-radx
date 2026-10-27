@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dicomweb"
-	"github.com/codeninja55/go-radx/dicomweb/integration/orthanc"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dicomweb"
+	"github.com/failed33/go-radx/dicomweb/integration/orthanc"
 )
 
 // storeFixture is a vendored, uncompressed (Explicit VR Little Endian) MR Image Storage

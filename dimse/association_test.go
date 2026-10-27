@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse/acse"
-	"github.com/codeninja55/go-radx/dimse/dul"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/acse"
+	"github.com/failed33/go-radx/dimse/dul"
 )
 
 // startEchoAcceptor listens on loopback and, for each inbound connection, runs the acse
@@ -124,6 +124,24 @@ func TestOperationOnReleasedAssociationReturnsTypedError(t *testing.T) {
 	}
 	if _, ok := errors.AsType[*AssociationError](err); !ok {
 		t.Errorf("Abort-on-released error = %T, want *AssociationError", err)
+	}
+}
+
+func TestTranslateAssociationRejectionPreservesResult(t *testing.T) {
+	err := translateAssociateError(&acse.RejectedError{Result: 2, Source: 3, Reason: 2})
+	var associationErr *AssociationError
+	if !errors.As(err, &associationErr) {
+		t.Fatalf("error = %T, want *AssociationError", err)
+	}
+	if associationErr.Result != 2 || associationErr.Source != 3 || associationErr.Reason != 2 {
+		t.Fatalf("association rejection = %+v", associationErr)
+	}
+}
+
+func TestTranslateAssociationTimeoutPreservesContextCause(t *testing.T) {
+	err := translateAssociateError(context.DeadlineExceeded)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("error = %v, want context deadline in error chain", err)
 	}
 }
 

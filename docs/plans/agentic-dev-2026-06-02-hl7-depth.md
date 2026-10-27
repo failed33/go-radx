@@ -26,7 +26,7 @@ discipline), and finally the batch/file containers and the `Container`/`ParseAny
 single-package `hl7v2` (no sub-packages) — the reference doc commits `hl7v2.Client`/`hl7v2.Server`/`hl7v2.WriteFrame`
 at the package root, mirroring `net/http`.
 
-**Tech stack:** Go 1.26.3, module `github.com/codeninja55/go-radx`; standard library only for the wire and transport
+**Tech stack:** Go 1.26.3, module `github.com/failed33/go-radx`; standard library only for the wire and transport
 codecs (`bytes`, `strings`, `strconv`, `io`, `net`, `crypto/tls`, `context`, `iter`, `time`); `go.uber.org/zap` for the
 server's structured, no-PHI diagnostics (consistent with `dimse.Server`). No CGo, no new third-party dependency. The
 optional interop gate (see Open questions) may add a `//go:build interop` test path; it adds no production dependency.

@@ -11,7 +11,7 @@ This guide shows how to wire each provider to a `dicomweb.Client`.
 
 ## Prerequisites
 
-- A Go module that depends on `github.com/codeninja55/go-radx`.
+- A Go module that depends on `github.com/failed33/go-radx`.
 - For Google Cloud Healthcare: a project with the Cloud Healthcare API enabled, a DICOM store, and Application
   Default Credentials available in the environment (a service-account key referenced by
   `GOOGLE_APPLICATION_CREDENTIALS`, `gcloud auth application-default login`, or a GCE/GKE workload identity).
@@ -33,8 +33,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/codeninja55/go-radx/dicomweb"
-	"github.com/codeninja55/go-radx/dicomweb/auth/gcp"
+	"github.com/failed33/go-radx/dicomweb"
+	"github.com/failed33/go-radx/dicomweb/auth/gcp"
 )
 
 func newGoogleHealthcareClient(ctx context.Context, project, location, dataset, dicomStore string) (*dicomweb.Client, error) {
@@ -69,8 +69,8 @@ import (
 	"fmt"
 
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
-	"github.com/codeninja55/go-radx/dicomweb"
-	awsauth "github.com/codeninja55/go-radx/dicomweb/auth/aws"
+	"github.com/failed33/go-radx/dicomweb"
+	awsauth "github.com/failed33/go-radx/dicomweb/auth/aws"
 )
 
 func newHealthImagingSigV4Client(ctx context.Context, region, endpoint string) (*dicomweb.Client, error) {
@@ -103,7 +103,7 @@ adapter: any `oauth2.TokenSource` that yields the OIDC access token wires straig
 package main
 
 import (
-	"github.com/codeninja55/go-radx/dicomweb"
+	"github.com/failed33/go-radx/dicomweb"
 	"golang.org/x/oauth2"
 )
 

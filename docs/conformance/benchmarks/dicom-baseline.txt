@@ -13,7 +13,7 @@
 #
 goos: darwin
 goarch: arm64
-pkg: github.com/codeninja55/go-radx/dicom
+pkg: github.com/failed33/go-radx/dicom
 cpu: Apple M1
 BenchmarkReadFile/liver.dcm-8     	     100	    227376 ns/op	 451.37 MB/s	  148257 B/op	    1573 allocs/op
 BenchmarkReadFile/liver.dcm-8     	     100	    155168 ns/op	 661.41 MB/s	  148218 B/op	    1573 allocs/op
@@ -94,4 +94,4 @@ BenchmarkReadFileLargeElement/deferred-8                      	     100	    7838
 BenchmarkReadFileLargeElement/deferred-8                      	     100	    794315 ns/op	    7888 B/op	     115 allocs/op
 BenchmarkReadFileLargeElement/deferred-8                      	     100	    801307 ns/op	    7805 B/op	     115 allocs/op
 PASS
-ok  	github.com/codeninja55/go-radx/dicom	3.170s
+ok  	github.com/failed33/go-radx/dicom	3.170s

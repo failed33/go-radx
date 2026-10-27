@@ -76,13 +76,15 @@ func TestRegressionDCM002Deflated(t *testing.T) {
 	}
 	raw := buf.Bytes()
 
-	// The plaintext "Doe^Jane" must NOT appear uncompressed in the output.
-	if bytes.Contains(raw, []byte("Doe^Jane")) {
-		t.Error("Deflated output contains uncompressed plaintext; the dataset was not deflated (DCM-002)")
+	var plain bytes.Buffer
+	if err := EncodeDataSet(&plain, ds, ExplicitVRLittleEndian); err != nil {
+		t.Fatalf("EncodeDataSet: %v", err)
 	}
 
-	// Skip preamble+DICM+file-meta group, then inflate the remainder and confirm it
-	// decodes to the dataset.
+	// Skip preamble+DICM+file-meta group, then inflate the remainder and confirm it is a
+	// raw DEFLATE stream (PS3.5 A.5) of the Explicit VR LE dataset. The check is on the
+	// stream structure, not on the absence of plaintext: RFC 1951 lets an encoder emit a
+	// stored block for small inputs, and Go 1.27's compress/flate does so for this one.
 	br := newBoundedReader(bytes.NewReader(raw), defaultMaxElementLen)
 	if _, err := readPreamble(br); err != nil {
 		t.Fatalf("readPreamble: %v", err)
@@ -96,10 +98,10 @@ func TestRegressionDCM002Deflated(t *testing.T) {
 	defer fr.Close()
 	inflated, err := io.ReadAll(fr)
 	if err != nil {
-		t.Fatalf("inflate: %v", err)
+		t.Fatalf("inflate: %v (the main dataset is not a DEFLATE stream; DCM-002)", err)
 	}
-	if !bytes.Contains(inflated, []byte("Doe^Jane")) {
-		t.Error("inflated deflate stream does not contain the dataset; not a valid DEFLATE main dataset (DCM-002)")
+	if !bytes.Equal(inflated, plain.Bytes()) {
+		t.Error("inflated deflate stream is not the Explicit VR LE dataset; not a valid DEFLATE main dataset (DCM-002)")
 	}
 }
 

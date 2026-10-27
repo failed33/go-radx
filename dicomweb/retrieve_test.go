@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // wadoStore is an in-memory WADO-RS retrieval backend implementing every optional retrieve

@@ -323,14 +323,14 @@ func tagSubsetted(filtered []byte) ([]byte, error) {
 		}
 	}
 
+	buf.WriteByte('}')
 	if !hasMeta {
-		// No meta was emitted, so insert one carrying only the SUBSETTED tag. Re-walk and
-		// splice it after the canonical anchor key recorded above; if there was no anchor
-		// (an object with neither resourceType nor id, which a generated resource never
-		// produces) it is appended last.
+		// No meta was emitted, so insert one carrying only the SUBSETTED tag. Re-walk the
+		// closed object and splice it after the canonical anchor key recorded above; if
+		// there was no anchor (an object with neither resourceType nor id, which a generated
+		// resource never produces) it is appended last.
 		return spliceMeta(buf.Bytes(), lastKey)
 	}
-	buf.WriteByte('}')
 	return buf.Bytes(), nil
 }
 

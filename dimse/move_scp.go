@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse/acse"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/acse"
 )
 
 // moveSupport carries the dependencies the C-MOVE SCP dispatch needs beyond the handler: the

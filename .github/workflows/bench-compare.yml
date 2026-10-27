@@ -31,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: jdx/mise-action@v3 # installs Go 1.26 per mise.toml [tools]
+      - uses: jdx/mise-action@v3 # installs Go 1.27 per mise.toml [tools]
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: astral-sh/setup-uv@v8
@@ -49,9 +49,9 @@ jobs:
           path: |
             ${{ runner.temp }}/.gocache/mod
             ${{ runner.temp }}/.gocache/build
-          key: go-1.26.4-${{ runner.os }}-bench-compare-${{ hashFiles('go.sum', 'tools/bench-compare/gobench/go.mod') }}
+          key: go-1.27.3-${{ runner.os }}-bench-compare-${{ hashFiles('go.sum', 'tools/bench-compare/gobench/go.mod') }}
           restore-keys: |
-            go-1.26.4-${{ runner.os }}-bench-compare-
+            go-1.27.3-${{ runner.os }}-bench-compare-
       - name: Install build tooling
         run: sudo apt-get update && sudo apt-get install -y cmake build-essential pkg-config nasm curl
       # Same pinned codec sources, checksums, and tarball cache as ci.yml's codecs job.

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/cmd/radx/internal/exitcode"
-	"github.com/codeninja55/go-radx/dimse"
+	"github.com/failed33/go-radx/cmd/radx/internal/exitcode"
+	"github.com/failed33/go-radx/dimse"
 )
 
 // echoSCPHandler answers a C-ECHO with a configurable status, so a test can drive both the

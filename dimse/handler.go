@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"iter"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse/acse"
-	"github.com/codeninja55/go-radx/dimse/pdu"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/acse"
+	"github.com/failed33/go-radx/dimse/pdu"
 )
 
 // OpInfo carries the per-operation context an SCP needs to answer an inbound DIMSE operation:

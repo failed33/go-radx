@@ -12,9 +12,9 @@ import (
 
 	_ "modernc.org/sqlite" // pure-Go SQLite driver; keeps the default build cgo-free.
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dicomweb"
-	"github.com/codeninja55/go-radx/dimse"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dicomweb"
+	"github.com/failed33/go-radx/dimse"
 )
 
 // indexedColumn is one queryable attribute the catalogue extracts and the column it maps to.

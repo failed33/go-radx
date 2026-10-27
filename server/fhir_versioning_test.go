@@ -16,10 +16,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/fhir"
-	"github.com/codeninja55/go-radx/fhir/r4"
-	"github.com/codeninja55/go-radx/fhir/r5"
-	"github.com/codeninja55/go-radx/fhir/rest"
+	"github.com/failed33/go-radx/fhir"
+	"github.com/failed33/go-radx/fhir/r4"
+	"github.com/failed33/go-radx/fhir/r5"
+	"github.com/failed33/go-radx/fhir/rest"
 )
 
 // startFHIRDaemonRepo mounts a FHIR role over the given Repository on a loopback OS-assigned port,
@@ -40,15 +40,7 @@ func startFHIRDaemonRepo(t *testing.T, release fhir.Release, repo Repository) (s
 	go func() { runErr <- d.Run(runCtx) }()
 	waitForAddrs(t, d, "fhir@/fhir")
 	base := "http://" + d.Addrs()["fhir@/fhir"].String() + "/fhir"
-	cleanup := func() {
-		cancelRun()
-		select {
-		case <-runErr:
-		case <-time.After(5 * time.Second):
-			t.Error("daemon did not stop within 5s")
-		}
-	}
-	return base, cleanup
+	return base, func() { stopHTTPDaemon(t, cancelRun, runErr) }
 }
 
 // createPatient POSTs a Patient and returns its server-assigned id.

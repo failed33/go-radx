@@ -14,7 +14,7 @@
 #
 goos: darwin
 goarch: arm64
-pkg: github.com/codeninja55/go-radx/dicom
+pkg: github.com/failed33/go-radx/dicom
 cpu: Apple M1
 BenchmarkRLECodecDecode-8        	      50	    954711 ns/op	 1573087 B/op	       6 allocs/op
 BenchmarkRLECodecDecode-8        	      50	    527988 ns/op	 1572864 B/op	       6 allocs/op
@@ -113,4 +113,4 @@ BenchmarkOpenJPEGCodecEncode-8                                     	      50	   
 BenchmarkOpenJPEGCodecEncode-8                                     	      50	   3916925 ns/op	 3149874 B/op	      12 allocs/op
 BenchmarkOpenJPEGCodecEncode-8                                     	      50	   3930770 ns/op	 3149874 B/op	      12 allocs/op
 PASS
-ok  	github.com/codeninja55/go-radx/dicom	11.365s
+ok  	github.com/failed33/go-radx/dicom	11.365s

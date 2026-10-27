@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // tagPatientName, tagSOPInstanceUID, tagRows are the small set of standard tags the

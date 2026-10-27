@@ -30,10 +30,10 @@ choice groups, enums, `_field` siblings per element) → an **emitter** (templat
 stage is gated by golden tests; the generated output is gated by "it compiles", "it round-trips known HL7 example JSON",
 and finally "the workflow set passes the official HL7 FHIR validator".
 
-**Tech Stack:** Go 1.26.x, module `github.com/codeninja55/go-radx`; standard library for the generator
+**Tech Stack:** Go 1.26.x, module `github.com/failed33/go-radx`; standard library for the generator
 (`encoding/json`, `text/template`, `go/format`, `archive/zip`, `crypto/sha256`, `embed` or a vendored definitions
 directory, `io/fs`, `sort`); `go.uber.org/zap` is **not** used in the generator (a build tool logs to stderr plainly).
-The generated runtime code depends only on the standard library plus the existing `github.com/codeninja55/go-radx/dicom`
+The generated runtime code depends only on the standard library plus the existing `github.com/failed33/go-radx/dicom`
 (for the shared `Decimal`). The official HL7 FHIR validator runs in CI as the conformance gate (a Java jar or the
 existing M0 validator container — confirm the M0 wiring; see Open questions). No CGo anywhere in this milestone.
 

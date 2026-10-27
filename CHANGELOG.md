@@ -65,6 +65,18 @@ legacy codebase (`legacy-main`) and are not continued here.
   are masked and sign-extended from BitsStored/HighBit; an unusable Window Width degrades to the
   auto-stretch; non-8-bit colour frames fail closed. (#154)
 
+- Independent DIMSE server hooks for TCP connection lifecycle and whole local response-send completion.
+  Connection events retain remote identity, original errors, coarse protocol operations and release/abort/EOF/stop reasons.
+  Response events cover all supported C- and N-service replies, including pending/final and unsupported-operation replies,
+  with connection/message correlation and command/dataset encoding or transport failures.
+  Callbacks are synchronous and must remain fast; successful local sends do not prove peer receipt.
+  ([#2](https://github.com/failed33/go-radx/pull/2))
+- Bit-preserving C-STORE: an SCP handler implementing `dimse.EncodedStoreHandler` receives the dataset bytes as
+  received in the negotiated transfer syntax plus a prefix decoded only through Series Instance UID, instead of a fully
+  decoded dataset. Context and SOP Instance UID validation still run first.
+  `EncodedDataSet.WriteFileMeta` writes the PS3.10 header that precedes those bytes in a Part 10 file.
+  `dicom.WithStopAtTag` stops a dataset read before a given tag, and `dicom.WriteFileMeta` is exported.
+
 ### Changed
 
 - The dicom parity matrix's ISO 2022 row is restored to MET: the per-item charset-in-sequences behaviour
@@ -96,6 +108,37 @@ legacy codebase (`legacy-main`) and are not continued here.
   median of 7 samples, pinned Python peers), replacing the preliminary smoke-run numbers, and all four Go
   benchmark baselines re-recorded at the same commit so they carry the post-copy-elimination allocation
   profile. (#153)
+
+- Part 10 `Write` streams the main dataset without retaining a second encoded copy. Binary values reuse
+  internally owned encode/decode buffers; public constructors and getters still copy at ownership boundaries.
+  Late value or sink errors may leave partial output, which callers must discard.
+  ([#1](https://github.com/failed33/go-radx/pull/1))
+
+## [0.12.0] - 2026-08-28
+
+### Changed
+
+- The DIMSE timeout (`WithDIMSETimeout`) is now a per-PDU idle bound instead of a single deadline
+  over a whole operation. It previously documented the pynetdicom/DCMTK semantic ("maximum wait for
+  a DIMSE response") but was applied as one absolute budget across an entire C-FIND/C-MOVE/C-GET
+  response loop, so any retrieval that legitimately streamed for longer than the timeout was cut
+  mid-transfer while the peer was actively sending. The idle clock now lives in `dul.Conn`
+  (`SetIdleTimeout`): every PDU read and write arms a fresh window and drops it on completion, in
+  both directions and on both the SCU and SCP sides, so the bound measures peer silence and never
+  operation duration or dataset size. `dimseContext`, `receiveMessageIdle`, and `readInbound`'s
+  private windowing are gone; operations and cancel drains run on the caller's context alone, with
+  the drains detached via `context.WithoutCancel` and idle-bounded like everything else — a flowing
+  post-cancel backlog drains cleanly, a stalled one ends in the same typed timeout.
+
+### Added
+
+- `dimse.TimeoutError` — an expiry of the idle bound with the caller's context still live now
+  surfaces as a typed error carrying the elapsed bound (`Idle`), reached via
+  `Association.LastError` on the query/retrieve iterators. It deliberately does not unwrap to
+  `context.DeadlineExceeded`, so a caller can tell a stalled peer from its own cancellation or
+  deadline without provenance guesswork; operation identity belongs to the caller's error wrapping
+  rather than the error itself. The association is left half-framed and must be discarded, not
+  reused.
 
 ## [0.11.0] - 2026-06-21
 

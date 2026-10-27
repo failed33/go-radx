@@ -3,7 +3,7 @@ package convert
 import (
 	"testing"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // TestUIDIdentifierR5 is the absolute identity rule: a DICOM UID becomes a FHIR

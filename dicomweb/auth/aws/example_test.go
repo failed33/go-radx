@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
-	awsauth "github.com/codeninja55/go-radx/dicomweb/auth/aws"
+	awsauth "github.com/failed33/go-radx/dicomweb/auth/aws"
 )
 
 // ExampleSigV4RoundTripper shows how a caller builds the SigV4 transport from the AWS

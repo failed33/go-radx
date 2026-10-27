@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // otherNServiceSOPClass is a second, NEVER-negotiated N-service abstract syntax (a synthetic UID).

@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dicomweb"
-	"github.com/codeninja55/go-radx/dimse"
-	"github.com/codeninja55/go-radx/fhir/r5"
-	"github.com/codeninja55/go-radx/hl7v2"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dicomweb"
+	"github.com/failed33/go-radx/dimse"
+	"github.com/failed33/go-radx/fhir/r5"
+	"github.com/failed33/go-radx/hl7v2"
 )
 
 // recordingStoreSCP is an in-process DIMSE C-STORE SCP that records the received

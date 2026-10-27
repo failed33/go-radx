@@ -48,7 +48,7 @@ new presentation-context presets (`QueryRetrieveContexts`, `BasicWorklistContext
 `StorageCommitmentContexts`) join `presets.go`. Every leg ends green: unit tests with `-race`, a clean `golangci-lint`,
 and — where the reference PACS supports the service — a passing interop gate behind `//go:build interop`.
 
-**Tech Stack:** Go 1.26.x, module `github.com/codeninja55/go-radx`; standard library for the wire and iteration
+**Tech Stack:** Go 1.26.x, module `github.com/failed33/go-radx`; standard library for the wire and iteration
 (`encoding/binary`, `iter`, `context`, `sync`); `go.uber.org/zap` for structured, no-PHI diagnostics; `testcontainers-go`
 for the Orthanc / dcm4chee-arc interop gates (already a dependency). No CGo in any M3 leg — the four
 uncompressed/deflated transfer syntaxes are the only ones the queries and retrievals negotiate and exercise end-to-end

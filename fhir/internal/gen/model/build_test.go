@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/codeninja55/go-radx/fhir/internal/gen/loader"
+	"github.com/failed33/go-radx/fhir/internal/gen/loader"
 )
 
 // elem is a terse ElementDefinition builder for the synthetic snapshots below.

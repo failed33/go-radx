@@ -11,7 +11,7 @@
 
 The `radx` command-line interface is go-radx's flagship first-party consumer. It is the tool that proves the library
 API is usable, and it serves practitioners and operators who want dcmtk-class breadth from a single binary. It lives in
-a separate Go module (`github.com/codeninja55/go-radx/cmd/radx`, `docs/prd/go-radx-prd.md` §7.4) so that library
+a separate Go module (`github.com/failed33/go-radx/cmd/radx`, `docs/prd/go-radx-prd.md` §7.4) so that library
 consumers importing the core packages never inherit the CLI's Kong parser and terminal-UI dependency graph.
 
 This reference defines the public command surface and the behaviour every command shares: the command tree, the

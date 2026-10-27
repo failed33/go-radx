@@ -1,6 +1,6 @@
 [tools]
-go = "1.26.4"
-golangci-lint = "2.12.2"
+go = "1.27.3"
+golangci-lint = "2.15.0"
 
 [tasks."cover"]
 description = "Run the root-module race tests and write a single merged coverage profile (coverage.out)"
@@ -118,7 +118,7 @@ description = "Validate the go-radx FHIR R4 + R5 workflow sets with the pinned H
 run = "tools/fhir-conformance/validate.sh"
 
 [tasks."lint"]
-description = "Run golangci-lint (2.x, Go 1.26 compatible)"
+description = "Run golangci-lint (2.x, Go 1.27 compatible)"
 run = "golangci-lint run ./..."
 
 [tasks."pin-drift"]
@@ -297,7 +297,7 @@ description = "Build the radx CLI from its own module (GOWORK=off) into cmd/radx
 # stays satisfied. The release stamp is overridable via -ldflags; a plain build falls back to
 # the embedded VCS stamp (radx --version reads runtime/debug.ReadBuildInfo when the vars are
 # unset). To stamp a release, append:
-#   -ldflags "-X github.com/codeninja55/go-radx/cmd/radx/internal/cli.version=vX.Y.Z \
+#   -ldflags "-X github.com/failed33/go-radx/cmd/radx/internal/cli.version=vX.Y.Z \
 #             -X .../internal/cli.commit=$(git rev-parse --short HEAD) \
 #             -X .../internal/cli.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 dir = "cmd/radx"

@@ -3,7 +3,7 @@ package dimse
 import (
 	"context"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // NRequest carries the parsed fields of an inbound DIMSE-N request the SCP dispatch hands to an

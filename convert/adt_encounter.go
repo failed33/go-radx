@@ -3,8 +3,8 @@ package convert
 import (
 	"fmt"
 
-	"github.com/codeninja55/go-radx/fhir/r5"
-	"github.com/codeninja55/go-radx/hl7v2"
+	"github.com/failed33/go-radx/fhir/r5"
+	"github.com/failed33/go-radx/hl7v2"
 )
 
 // patientClassSystem is the FHIR code system for the Encounter class. The HL7 v2

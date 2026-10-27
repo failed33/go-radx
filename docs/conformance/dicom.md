@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | Standard | DICOM (NEMA PS3, 2024 edition referenced) |
-| Library | `github.com/codeninja55/go-radx` |
+| Library | `github.com/failed33/go-radx` |
 | Conformance version | `v1` (tracks the go-radx v1 release line) |
 | Status | Authored docs-first; the implementation conforms to this statement |
 | Scope authority | This document is the single source of truth for DICOM scope (PRD §6.1) |
@@ -698,7 +698,7 @@ import (
     "context"
     "log"
 
-    "github.com/codeninja55/go-radx/dimse"
+    "github.com/failed33/go-radx/dimse"
 )
 
 func main() {

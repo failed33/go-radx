@@ -12,9 +12,9 @@
 
 # --- Go toolchain and scanners (live pins owned by P0-7; recorded here for one-stop visibility) ---
 # go: mise.toml [tools], both go.mod files, ci.yml govulncheck job.
-go=1.26.4
+go=1.27.3
 # golangci-lint: mise.toml [tools].
-golangci-lint=2.12.2
+golangci-lint=2.15.0
 # govulncheck: ci.yml `go install golang.org/x/vuln/cmd/govulncheck@vX.Y.Z`.
 govulncheck=1.3.0
 

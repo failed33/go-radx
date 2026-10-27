@@ -20,7 +20,7 @@ statement and the reference docs disagree on *scope*, this statement wins; where
 |-------|-------|
 | Standard | HL7 FHIR |
 | Releases (v1) | R4 `4.0.1` and R5 `5.0.0` |
-| go-radx package | `github.com/codeninja55/go-radx/fhir` |
+| go-radx package | `github.com/failed33/go-radx/fhir` |
 | Statement version | 1.0 (tracks go-radx v1) |
 | Conformance basis | Generated from the official HL7 `StructureDefinition` bundles for 4.0.1 and 5.0.0 |
 | Reference validator | The official HL7 FHIR validator (merge-blocking in CI — PRD §11.1) |
@@ -856,8 +856,8 @@ candidate run with `benchstat benchmarks/fhir-baseline.txt <candidate>.txt`.
 
 ```go
 import (
-    "github.com/codeninja55/go-radx/fhir"
-    "github.com/codeninja55/go-radx/fhir/r5"
+    "github.com/failed33/go-radx/fhir"
+    "github.com/failed33/go-radx/fhir/r5"
 )
 
 // Decoding a Patient payload as Patient succeeds.

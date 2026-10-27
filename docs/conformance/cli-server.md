@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | Surface | `radx` CLI (`cmd/radx`) and the embeddable server entry points |
-| Library | `github.com/codeninja55/go-radx` |
+| Library | `github.com/failed33/go-radx` |
 | Conformance version | 1 |
 | Status | Published |
 | Scope authority | This document is the single source of truth for CLI/server scope (PRD §6.1) |
@@ -221,7 +221,7 @@ exercised entry points; the four swept sinks are the stable contract.
 
 ## Build and module layout
 
-`cmd/radx` lives in its own Go module (`github.com/codeninja55/go-radx/cmd/radx`) so that consumers importing the
+`cmd/radx` lives in its own Go module (`github.com/failed33/go-radx/cmd/radx`) so that consumers importing the
 library packages do not inherit the CLI's dependency graph. Both the CLI module and the library root module declare the
 same pinned Go toolchain, `go 1.26.4`, in agreement with `mise.toml`. A committed `go.work` at the repository root
 (`use (. ./cmd/radx)`) composes the two modules into one Go workspace for local builds and editor tooling; the

@@ -20,9 +20,9 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/codeninja55/go-radx/fhir"
-	"github.com/codeninja55/go-radx/fhir/r4"
-	"github.com/codeninja55/go-radx/fhir/r5"
+	"github.com/failed33/go-radx/fhir"
+	"github.com/failed33/go-radx/fhir/r4"
+	"github.com/failed33/go-radx/fhir/r5"
 )
 
 // batchResponseEnvelope is the release-neutral JSON view of a batch-response Bundle the tests decode

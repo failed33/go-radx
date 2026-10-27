@@ -8,7 +8,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/codeninja55/go-radx/fhir/r5"
+	"github.com/failed33/go-radx/fhir/r5"
 )
 
 // corpusDir is the vendored R5 example corpus the conformance gate validates with the

@@ -3,7 +3,7 @@ package dicomweb
 import (
 	"encoding/binary"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // bulkRef is the dicom.Value for a binary attribute decoded from DICOM JSON as a

@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse"
-	"github.com/codeninja55/go-radx/dimse/integration/orthanc"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse"
+	"github.com/failed33/go-radx/dimse/integration/orthanc"
 )
 
 // cgetSink is the StoreHandler the C-GET SCU passes to receive the same-association sub-operation

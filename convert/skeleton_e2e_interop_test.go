@@ -14,13 +14,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dicomweb"
-	dwebOrthanc "github.com/codeninja55/go-radx/dicomweb/integration/orthanc"
-	"github.com/codeninja55/go-radx/dimse"
-	dimseOrthanc "github.com/codeninja55/go-radx/dimse/integration/orthanc"
-	"github.com/codeninja55/go-radx/fhir/r5"
-	"github.com/codeninja55/go-radx/hl7v2"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dicomweb"
+	dwebOrthanc "github.com/failed33/go-radx/dicomweb/integration/orthanc"
+	"github.com/failed33/go-radx/dimse"
+	dimseOrthanc "github.com/failed33/go-radx/dimse/integration/orthanc"
+	"github.com/failed33/go-radx/fhir/r5"
+	"github.com/failed33/go-radx/hl7v2"
 )
 
 // skeletonInteropFixture is the vendored, uncompressed MR Image Storage instance

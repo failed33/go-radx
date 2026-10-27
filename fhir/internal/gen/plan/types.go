@@ -1,6 +1,6 @@
 package plan
 
-import "github.com/codeninja55/go-radx/fhir/internal/gen/model"
+import "github.com/failed33/go-radx/fhir/internal/gen/model"
 
 // primitiveGoTypes maps a FHIR primitive type code to its Go scalar. The date/time
 // family and the string family all become Go string (validated on decode by a later

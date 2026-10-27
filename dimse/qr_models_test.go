@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // TestValidateModelLevel is the per-model level-handling regression (PS3.4 Annex C). Each

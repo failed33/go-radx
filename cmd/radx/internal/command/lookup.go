@@ -3,8 +3,8 @@ package command
 import (
 	"fmt"
 
-	"github.com/codeninja55/go-radx/cmd/radx/internal/cli"
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/cmd/radx/internal/cli"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // LookupCmd resolves a DICOM tag or keyword against the standard data dictionary and prints the

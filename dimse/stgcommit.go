@@ -6,9 +6,9 @@ import (
 	"math"
 	"net"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse/acse"
-	"github.com/codeninja55/go-radx/dimse/dul"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/acse"
+	"github.com/failed33/go-radx/dimse/dul"
 )
 
 // StorageCommitmentPushModelSOPClass is the Storage Commitment Push Model SOP Class UID (PS3.4 J.3),
@@ -198,9 +198,6 @@ func (sc *StorageCommitment) Request(ctx context.Context, transactionUID string,
 
 	conn := a.requestor.Conn()
 	machine := a.requestor.Machine()
-	opCtx, cancel := a.dimseContext(ctx)
-	defer cancel()
-
 	rq := CommandSet{
 		CommandField:            CommandNActionRQ,
 		MessageID:               a.nextMessageID(),
@@ -210,11 +207,11 @@ func (sc *StorageCommitment) Request(ctx context.Context, transactionUID string,
 		ActionTypeID:            storageCommitmentActionType,
 		CommandDataSetType:      CommandDataSetPresent,
 	}
-	if err := sendMessage(opCtx, conn, machine, pcID, rq, actionInfo, ts, a.sendCap()); err != nil {
+	if err := sendMessage(ctx, conn, machine, pcID, rq, actionInfo, ts, a.sendCap()); err != nil {
 		return Status{}, err
 	}
 
-	rsp, _, _, err := receiveMessage(opCtx, conn, machine, newMessageReassembler(ts))
+	rsp, _, _, err := receiveMessage(ctx, conn, machine, newMessageReassembler(ts))
 	if err != nil {
 		return Status{}, err
 	}
@@ -390,6 +387,9 @@ func (r *CommitmentReceiver) ServeConn(ctx context.Context, nc net.Conn) error {
 	if err != nil {
 		return err
 	}
+	// Arm the data-transfer idle bound once negotiation is complete, exactly as the Server's
+	// dispatch path does — the report read and its response ride the same per-PDU bound.
+	conn.SetIdleTimeout(r.ae.config().networkTimeout)
 
 	handlerErr := r.serveReport(ctx, acc)
 	if relErr := acc.ServeRelease(ctx); relErr != nil && handlerErr == nil {

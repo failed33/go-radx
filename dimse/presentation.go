@@ -1,6 +1,6 @@
 package dimse
 
-import "github.com/codeninja55/go-radx/dicom"
+import "github.com/failed33/go-radx/dicom"
 
 // MaxPDULength is the negotiated largest acceptable P-DATA-TF PDU (PS3.7 Annex D.1). A
 // value of 0 means "no maximum specified" — unlimited — and is represented as unlimited,

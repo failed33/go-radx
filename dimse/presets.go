@@ -1,6 +1,6 @@
 package dimse
 
-import "github.com/codeninja55/go-radx/dicom"
+import "github.com/failed33/go-radx/dicom"
 
 // verificationSOPClass is the Verification SOP Class UID (PS3.4 A.4), the abstract syntax
 // of a C-ECHO presentation context.

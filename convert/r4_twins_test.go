@@ -4,10 +4,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/fhir"
-	"github.com/codeninja55/go-radx/fhir/r4"
-	"github.com/codeninja55/go-radx/hl7v2"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/fhir"
+	"github.com/failed33/go-radx/fhir/r4"
+	"github.com/failed33/go-radx/hl7v2"
 )
 
 // TestDICOMToImagingStudyR4 exercises the R4 ImagingStudy twin against a two-instance,

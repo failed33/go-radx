@@ -1,4 +1,4 @@
-go 1.26.4
+go 1.27.3
 
 // go-radx is two modules: the library at the repository root and the radx CLI in its own
 // module (cmd/radx) so library consumers do not inherit the CLI's dependency graph. This

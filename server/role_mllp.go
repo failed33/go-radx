@@ -8,7 +8,7 @@ import (
 	"net"
 	"sync"
 
-	"github.com/codeninja55/go-radx/hl7v2"
+	"github.com/failed33/go-radx/hl7v2"
 )
 
 // defaultMLLPPort is the MLLP listen port when WithMLLPPort is not set. 2575 is the IANA-registered

@@ -1,6 +1,6 @@
 package dimse
 
-import "github.com/codeninja55/go-radx/dimse/dul"
+import "github.com/failed33/go-radx/dimse/dul"
 
 // State is a DUL state, Sta1..Sta13 (PS3.8 Table 9-10). It is an alias of the dul layer's
 // State so there is a single source of truth for the lifecycle vocabulary; the root package

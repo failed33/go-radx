@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/codeninja55/go-radx/fhir"
+	"github.com/failed33/go-radx/fhir"
 )
 
 // Sentinel errors the client returns. Compare with errors.Is; a typed error wraps one with %w so a

@@ -17,7 +17,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/codeninja55/go-radx/cmd/radx/internal/exitcode"
+	"github.com/failed33/go-radx/cmd/radx/internal/exitcode"
 )
 
 // TestServeFHIRInsecureBindIsUsageError confirms a non-loopback bind without authentication is

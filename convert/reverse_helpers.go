@@ -1,8 +1,8 @@
 package convert
 
 import (
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/fhir/r5"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/fhir/r5"
 )
 
 // schemeDesignatorFor is the inverse of schemeDesignatorSystem: it maps a FHIR

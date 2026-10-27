@@ -10,8 +10,8 @@ package r4_test
 import (
 	"testing"
 
-	"github.com/codeninja55/go-radx/fhir"
-	"github.com/codeninja55/go-radx/fhir/r4"
+	"github.com/failed33/go-radx/fhir"
+	"github.com/failed33/go-radx/fhir/r4"
 )
 
 func lexStr(s string) *string { return &s }

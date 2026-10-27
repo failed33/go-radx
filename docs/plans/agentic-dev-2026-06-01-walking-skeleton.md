@@ -21,7 +21,7 @@ and the `Handler` interface) sit on top. `dicomweb`, `hl7v2`, `fhir` (a hand-wri
 `dicom.ReferencedSOPInstance`) rather than redeclaring it. Every leg ends green: unit tests with `-race`, a clean
 `golangci-lint`, and — for the DIMSE and DICOMweb legs — a passing interop container test.
 
-**Tech Stack:** Go 1.26.3, module `github.com/codeninja55/go-radx`; standard library for the wire codecs
+**Tech Stack:** Go 1.26.3, module `github.com/failed33/go-radx`; standard library for the wire codecs
 (`encoding/binary`, `net`, `net/http`, `mime/multipart`, `encoding/json`, `crypto/tls`, `context`, `iter`);
 `go.uber.org/zap` for structured, no-PHI diagnostics; `testcontainers-go` for the Orthanc / dcm4chee-arc interop gates
 (already a dependency per PRD §11.1). No CGo in any M2 leg — the four uncompressed/deflated transfer syntaxes are the

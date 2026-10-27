@@ -10,7 +10,7 @@
 | Field | Value |
 |-------|-------|
 | Standard | DICOM DIMSE networking (DICOM PS3.7, PS3.8) |
-| Library | `github.com/codeninja55/go-radx` |
+| Library | `github.com/failed33/go-radx` |
 | Conformance version | unassigned (standalone statement not yet authored) |
 | Status | **NOT YET SHIPPED** — scaffold only; see [`./dicom.md`](./dicom.md) |
 | Scope authority | The DICOM statement ([`./dicom.md`](./dicom.md)) is currently authoritative for DIMSE scope |

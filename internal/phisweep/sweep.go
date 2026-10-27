@@ -27,7 +27,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/codeninja55/go-radx/logging"
+	"github.com/failed33/go-radx/logging"
 )
 
 // Sink names the observable channel a sentinel surfaced through. It exists so a

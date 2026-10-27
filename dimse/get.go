@@ -5,8 +5,8 @@ import (
 	"errors"
 	"iter"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse/dul"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/dul"
 )
 
 // Get issues a C-GET and yields each response Status (PS3.4 C.4.3). Unlike a C-MOVE, a C-GET carries
@@ -82,9 +82,6 @@ func (a *Association) Get(
 		conn := a.requestor.Conn()
 		m := a.requestor.Machine()
 
-		opCtx, cancel := a.dimseContext(ctx)
-		defer cancel()
-
 		msgID := a.nextMessageID()
 		rq := CommandSet{
 			CommandField:        CommandCGetRQ,
@@ -94,7 +91,7 @@ func (a *Association) Get(
 			Priority:            cfg.priority,
 			CommandDataSetType:  CommandDataSetPresent,
 		}
-		if err := sendMessage(opCtx, conn, m, pcID, rq, identifier, ts, a.sendCap()); err != nil {
+		if err := sendMessage(ctx, conn, m, pcID, rq, identifier, ts, a.sendCap()); err != nil {
 			a.setLastError(err)
 			yield(NewStatus(0xC000, svc), nil)
 			return
@@ -106,8 +103,12 @@ func (a *Association) Get(
 		// the counts and yield nil; the terminal yields last and ends iteration). An early break, or a
 		// ctx cancellation interrupting a read, sends a C-CANCEL-RQ for this operation's Message ID and
 		// drains the outstanding responses to the terminal, leaving the association clean for reuse.
+		// The connection's idle bound (from the DIMSE timeout) re-arms per PDU, so it bounds
+		// peer silence between messages, never the retrieve's total duration (a large series
+		// streams for minutes) — and a large single instance mid-reassembly keeps re-arming it
+		// with every PDU that lands.
 		for {
-			rsp, rspDS, inPCID, err := receiveMessage(opCtx, conn, m, newMessageReassemblerFunc(a.scuTransferSyntaxResolver()))
+			rsp, rspDS, inPCID, err := receiveMessage(ctx, conn, m, newMessageReassemblerFunc(a.scuTransferSyntaxResolver()))
 			if err != nil {
 				if (errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)) && ctx.Err() != nil {
 					a.cancelGetOperation(ctx, conn, m, pcID, ts, msgID, store)
@@ -124,7 +125,7 @@ func (a *Association) Get(
 			// each sub-operation, else the SCP wedges awaiting the response). A store fault on the wire
 			// ends the retrieve via LastError.
 			if rsp.CommandField == CommandCStoreRQ {
-				if serr := a.answerGetSubOperation(opCtx, conn, m, store, rsp, rspDS, inPCID); serr != nil {
+				if serr := a.answerGetSubOperation(ctx, conn, m, store, rsp, rspDS, inPCID); serr != nil {
 					a.setLastError(serr)
 					yield(NewStatus(0xC000, svc), nil)
 					return

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse"
 )
 
 // TestDaemonDIMSERoundTrip wires the default filesystem object store, an in-memory SQLite catalogue,

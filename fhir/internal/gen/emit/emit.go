@@ -16,7 +16,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/codeninja55/go-radx/fhir/internal/gen/plan"
+	"github.com/failed33/go-radx/fhir/internal/gen/plan"
 )
 
 //go:embed templates/*.tmpl
@@ -143,7 +143,7 @@ func primitiveImports(wrappers []plan.PrimitiveWrapper) []string {
 	for _, w := range wrappers {
 		switch w.Kind {
 		case plan.WrapperDecimal:
-			set["github.com/codeninja55/go-radx/fhir"] = true
+			set["github.com/failed33/go-radx/fhir"] = true
 		case plan.WrapperInt64String:
 			set["encoding/json"] = true
 			set["strconv"] = true
@@ -210,7 +210,7 @@ func EmitEnums(e Enums) ([]byte, error) {
 func enumImports(enums []plan.PlannedEnum) []string {
 	for _, e := range enums {
 		if !e.NotInlined {
-			return []string{"github.com/codeninja55/go-radx/fhir"}
+			return []string{"github.com/failed33/go-radx/fhir"}
 		}
 	}
 	return nil
@@ -330,7 +330,7 @@ func EmitDescriptors(d Descriptors) ([]byte, error) {
 // MarshalJSON and the "_field" sibling marshal/unmarshal methods all call into
 // encoding/json). Sorting keeps the import block stable across runs.
 func requiredImports(types []plan.PlannedType) []string {
-	const fhirImport = "github.com/codeninja55/go-radx/fhir"
+	const fhirImport = "github.com/failed33/go-radx/fhir"
 	const jsonImport = "encoding/json"
 	set := map[string]bool{}
 	for _, t := range types {

@@ -6,10 +6,10 @@ import (
 	"io"
 	"time"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse/acse"
-	"github.com/codeninja55/go-radx/dimse/dul"
-	"github.com/codeninja55/go-radx/dimse/pdu"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/acse"
+	"github.com/failed33/go-radx/dimse/dul"
+	"github.com/failed33/go-radx/dimse/pdu"
 )
 
 // dispatchAssociation negotiates one inbound association and then dispatches its DIMSE operations
@@ -38,7 +38,7 @@ import (
 // when it is positive: a peer that completes negotiation then sends nothing must not hold a capacity
 // slot and a goroutine forever (a slot-exhaustion DoS — Codex/concurrency review). On the timeout
 // the read returns context.DeadlineExceeded, the association ends, and the Server releases the slot.
-func dispatchAssociation(ctx context.Context, conn *dul.Conn, params acse.AcceptParams, acseTimeout, networkTimeout time.Duration, h any, move moveSupport) error {
+func dispatchAssociation(ctx context.Context, conn *dul.Conn, params acse.AcceptParams, acseTimeout, networkTimeout time.Duration, h any, move moveSupport) connectionEnd {
 	negotiateCtx := ctx
 	if acseTimeout > 0 {
 		var cancel context.CancelFunc
@@ -47,41 +47,50 @@ func dispatchAssociation(ctx context.Context, conn *dul.Conn, params acse.Accept
 	}
 	acc, err := acse.Accept(negotiateCtx, conn, params)
 	if err != nil {
-		return err
+		return connectionFailure(ctx, ConnectionEstablish, err)
 	}
+	// networkTimeout is the data-transfer idle bound: armed only once negotiation is complete
+	// (the handshake stays governed solely by acseTimeout above), it bounds each PDU read and
+	// write for the association's lifetime — see Conn.SetIdleTimeout. That covers every serve
+	// path on this association, the release await-close read and outbound responses included.
+	conn.SetIdleTimeout(networkTimeout)
 	calling := AETitle(acc.CallingAETitle())
 	called := AETitle(acc.CalledAETitle())
 	resolveTS := acceptedTransferSyntaxResolver(acc)
+	_, encodedStore := h.(EncodedStoreHandler)
 
 	for {
 		if err := ctx.Err(); err != nil {
-			return err
+			return connectionEnd{reason: ConnectionServerStopped, err: err}
 		}
-		cmd, ds, pcID, kind, err := readInbound(ctx, acc, networkTimeout, resolveTS)
+		cmd, ds, encoded, pcID, kind, err := readInbound(ctx, acc, resolveTS, encodedStore)
 		if err != nil {
-			return err
+			return connectionFailure(ctx, ConnectionReceive, err)
 		}
 		switch kind {
 		case inboundReleased:
 			// CompleteRelease sends the A-RELEASE-RP then awaits the peer's orderly transport close (a
 			// final inbound read). A peer that sends A-RELEASE-RQ then HOLDS the TCP open would block
 			// that read forever, holding the capacity slot and goroutine until Shutdown — a
-			// slot-exhaustion DoS in the release phase (P1 adversarial review). Bound the await-close
-			// read by networkTimeout: it is an idle wait for the peer to close, the same idle-bound the
-			// post-negotiation reads use.
-			releaseCtx := ctx
-			if networkTimeout > 0 {
-				var cancel context.CancelFunc
-				releaseCtx, cancel = context.WithTimeout(ctx, networkTimeout)
-				defer cancel()
+			// slot-exhaustion DoS in the release phase (P1 adversarial review). The connection's idle
+			// bound covers that await-close read like every other read on this association.
+			if err := acc.CompleteRelease(ctx); err != nil {
+				return connectionFailure(ctx, ConnectionRelease, err)
 			}
-			return acc.CompleteRelease(releaseCtx)
+			return connectionEnd{reason: ConnectionReleased}
 		case inboundAborted, inboundClosed:
 			// The peer aborted or closed the transport in an orderly way; the association is over.
-			return conn.Close()
+			reason := ConnectionPeerClosed
+			if kind == inboundAborted {
+				reason = ConnectionPeerAborted
+			}
+			if ctx.Err() != nil {
+				reason = ConnectionServerStopped
+			}
+			return connectionEnd{reason: reason, err: conn.Close()}
 		case inboundMessage:
-			if derr := dispatchMessage(ctx, acc, h, move, cmd, ds, pcID, calling, called); derr != nil {
-				return derr
+			if derr := dispatchMessage(ctx, acc, h, move, cmd, ds, encoded, pcID, calling, called); derr != nil {
+				return connectionFailure(ctx, ConnectionProcess, derr)
 			}
 		}
 	}
@@ -101,64 +110,54 @@ const (
 // through dul.DriveInbound (the shared inbound hardening) and either reassembles a complete DIMSE
 // message from one or more P-DATA-TF PDUs, or reports an A-RELEASE-RQ / A-ABORT / orderly close.
 // A protocol violation surfaces as a typed error (DriveInbound has already sent the provider
-// A-ABORT); a clean io.EOF reports inboundClosed.
+// A-ABORT); a clean io.EOF reports inboundClosed. With encodedStore a C-STORE dataset is decoded
+// only up to encodedPrefixStop and its received bytes are returned alongside that prefix.
 //
-// When networkTimeout is positive it bounds EACH inbound PDU read individually — it is the AE's
-// IDLE-association bound, not a cap on the whole message. The timeout is derived fresh per read
-// (and cancelled immediately after that read returns), so an idle gap — no PDU for networkTimeout,
-// whether before the first PDU or stalled mid-reassembly — times out and the association ends,
-// while continuous progress resets the deadline. A legitimate large/slow C-STORE spanning many
-// P-DATA-TF PDUs over a total longer than networkTimeout therefore succeeds as long as each PDU
-// arrives within networkTimeout of the previous, rather than being aborted mid-transfer.
+// The connection's idle bound (Conn.SetIdleTimeout, armed from networkTimeout at association
+// establishment) bounds EACH inbound PDU read individually — it is the AE's IDLE-association
+// bound, not a cap on the whole message. An idle gap — no PDU for the bound, whether before the
+// first PDU or stalled mid-reassembly — times out and the association ends, while continuous
+// progress keeps re-arming it. A legitimate large/slow C-STORE spanning many P-DATA-TF PDUs over
+// a total longer than the bound therefore succeeds as long as each PDU arrives within the bound
+// of the previous, rather than being aborted mid-transfer.
 func readInbound(
 	ctx context.Context,
 	acc *acse.Acceptor,
-	networkTimeout time.Duration,
 	resolveTS func(pcID uint8) (dicom.TransferSyntax, error),
-) (CommandSet, *dicom.DataSet, uint8, inboundKind, error) {
+	encodedStore bool,
+) (CommandSet, *dicom.DataSet, []byte, uint8, inboundKind, error) {
 	conn := acc.Conn()
 	m := acc.Machine()
 	r := newMessageReassemblerFunc(resolveTS)
+	r.encodedStore = encodedStore
 	for {
-		// Bound this single read by the idle timeout. The context is derived fresh per read and
-		// cancelled explicitly the moment DriveInbound returns (NOT deferred, which would accumulate
-		// one live timer per PDU across the reassembly loop), so the deadline tracks the gap since the
-		// last PDU, not the elapsed time of the whole message.
-		readCtx := ctx
-		var cancel context.CancelFunc
-		if networkTimeout > 0 {
-			readCtx, cancel = context.WithTimeout(ctx, networkTimeout)
-		}
-		p, _, err := dul.DriveInbound(readCtx, conn, m)
-		if cancel != nil {
-			cancel()
-		}
+		p, _, err := dul.DriveInbound(ctx, conn, m)
 		if err != nil {
 			if errors.Is(err, io.EOF) {
-				return CommandSet{}, nil, 0, inboundClosed, nil
+				return CommandSet{}, nil, nil, 0, inboundClosed, nil
 			}
-			return CommandSet{}, nil, 0, inboundClosed, translateInboundError(m, err)
+			return CommandSet{}, nil, nil, 0, inboundClosed, translateInboundError(m, err)
 		}
 		switch pv := p.(type) {
 		case *pdu.DataTF:
 			for _, item := range pv.Items {
 				done, aerr := r.add(item)
 				if aerr != nil {
-					return CommandSet{}, nil, 0, inboundClosed, aerr
+					return CommandSet{}, nil, nil, 0, inboundClosed, aerr
 				}
 				if done {
-					return *r.command, r.dataset, r.pcID, inboundMessage, nil
+					return *r.command, r.dataset, r.encodedDataset(), r.pcID, inboundMessage, nil
 				}
 			}
 		case *pdu.ReleaseRQ:
-			return CommandSet{}, nil, 0, inboundReleased, nil
+			return CommandSet{}, nil, nil, 0, inboundReleased, nil
 		case *pdu.Abort:
-			return CommandSet{}, nil, 0, inboundAborted, nil
+			return CommandSet{}, nil, nil, 0, inboundAborted, nil
 		default:
 			// A recognised-but-unexpected PDU in Sta6 drives AA-8 inside DriveInbound, which
 			// returns a *StateError translated above; reaching here means a PDU type with a
 			// defined non-fault transition we do not consume during data transfer.
-			return CommandSet{}, nil, 0, inboundClosed, &ProtocolError{
+			return CommandSet{}, nil, nil, 0, inboundClosed, &ProtocolError{
 				State:  m.CurrentState(),
 				Detail: "unexpected " + p.Type().String() + " on an established association",
 			}
@@ -172,7 +171,8 @@ func readInbound(
 // gracefully with a StatusSOPClassNotSupported RSP rather than panicking or accepting (interface
 // segregation, PRD §8.2). A command field this SCP services no capability for is answered as a
 // protocol fault rather than silently dropped. The Echo and Store paths reuse the shared dispatch
-// primitives (serveEchoCommand / serveStoreMessage) so the response logic lives in one place.
+// primitives (serveEchoCommand / serveStoreMessage) so the response logic lives in one place. A
+// C-STORE goes to an EncodedStoreHandler with its received bytes when h implements one.
 func dispatchMessage(
 	ctx context.Context,
 	acc *acse.Acceptor,
@@ -180,6 +180,7 @@ func dispatchMessage(
 	move moveSupport,
 	cmd CommandSet,
 	ds *dicom.DataSet,
+	encoded []byte,
 	pcID uint8,
 	calling, called AETitle,
 ) error {
@@ -202,6 +203,10 @@ func dispatchMessage(
 		_, err := serveEchoCommand(ctx, acc, eh, cmd, pcID, base)
 		return err
 	case CommandCStoreRQ:
+		if eh, ok := h.(EncodedStoreHandler); ok {
+			_, err := serveStoreMessage(ctx, acc, encodedStoreAdapter{h: eh, encoded: encoded}, cmd, ds, pcID, base)
+			return err
+		}
 		sh, ok := h.(StoreHandler)
 		if !ok {
 			return refuseUnsupportedStore(ctx, acc, cmd, pcID)

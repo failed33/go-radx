@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | Scope | Engineering posture shared across every subsystem (CI, supply chain, interop, build, coverage, concurrency) |
-| Library | `github.com/codeninja55/go-radx` |
+| Library | `github.com/failed33/go-radx` |
 | Conformance version | 1 |
 | Status | Published |
 | Scope authority | This document is the single source of truth for the cross-cutting contract (PRD §6.1) |
@@ -28,11 +28,11 @@ engineering contract that makes their claims trustworthy and repeatable.
 
 ## Supply chain
 
-go-radx runs on a single pinned Go toolchain across every CI job and every module. The version is Go 1.26.4, declared in
+go-radx runs on a single pinned Go toolchain across every CI job and every module. The version is Go 1.27.3, declared in
 three places that must stay in agreement: the module root `go.mod`, the `cmd/radx` module's `go.mod`, and the `[tools]`
 table in `mise.toml`. `mise.toml` is the installer of record — `jdx/mise-action` provisions that toolchain for the
 `lint-test`, `conformance`, `interop`, `cmd-radx`, and `codecs` jobs — while the `govulncheck` job pins the same
-`1.26.4` through `actions/setup-go`, since it does not run under mise.
+`1.27.3` through `actions/setup-go`, since it does not run under mise.
 
 The `govulncheck` vulnerability scan runs on every push and pull request to `main` against the module root (`go.mod`).
 The scanner itself is pinned to a released version: the job runs
@@ -135,8 +135,8 @@ wired — its pin is recorded but no leg invokes it, as noted under
 
 ## Build and module layout (go.work, cmd/radx CI)
 
-go-radx is two Go modules. The library packages live at the repository root (`github.com/codeninja55/go-radx`); the
-`radx` command-line interface lives in its own module under `cmd/radx` (`github.com/codeninja55/go-radx/cmd/radx`) so
+go-radx is two Go modules. The library packages live at the repository root (`github.com/failed33/go-radx`); the
+`radx` command-line interface lives in its own module under `cmd/radx` (`github.com/failed33/go-radx/cmd/radx`) so
 that consumers importing the library packages do not inherit the CLI's dependency graph. Both modules declare the same
 pinned Go toolchain, `go 1.26.4`, in agreement with the `[tools]` table in `mise.toml`, as the
 [Supply chain](#supply-chain) posture requires.
@@ -155,7 +155,7 @@ The `cmd-radx` job builds, vets, lints, and vulnerability-scans the CLI module s
 unvetted in CI. It runs from `cmd/radx` with `GOWORK=off`, which makes every step resolve against the module's own
 `go.mod`/`go.sum` rather than the workspace — the module is gated exactly as a downstream consumer building the CLI
 would see it, not as a workspace shortcut. The four steps are `go build ./...`, `go vet ./...`,
-`golangci-lint run ./...` (the same mise-pinned `2.12.2` the library jobs use), and `govulncheck ./...` (the same
+`golangci-lint run ./...` (the same mise-pinned `2.15.0` the library jobs use), and `govulncheck ./...` (the same
 `@v1.3.0`-pinned scanner the root [Supply chain](#supply-chain) gate uses, resolved via `go run …@v1.3.0` under the
 mise-provided Go). The job runs on every push and pull request to `main` alongside the other gates.
 

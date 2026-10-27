@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // RetrieveStudy retrieves every instance of a study as a streaming iterator over the
