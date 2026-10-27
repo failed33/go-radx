@@ -73,14 +73,17 @@ func WithMaxPDULength(n MaxPDULength) AEOption {
 	return func(c *aeConfig) { c.maxPDULength = n }
 }
 
-// WithImplementationClassUID sets the Implementation Class UID advertised in the
-// A-ASSOCIATE user information (PS3.7 D.3.3.2).
+// WithImplementationClassUID sets the Implementation Class UID advertised in every
+// A-ASSOCIATE-RQ and -AC user information (PS3.7 D.3.3.2), where it is mandatory. The default
+// is dicom.ImplementationClassUID; an empty uid keeps the default.
 func WithImplementationClassUID(uid dicom.UID) AEOption {
 	return func(c *aeConfig) { c.implementationClassUID = uid }
 }
 
 // WithImplementationVersionName sets the Implementation Version Name advertised in the
-// A-ASSOCIATE user information (PS3.7 D.3.3.2).
+// A-ASSOCIATE user information (PS3.7 D.3.3.2). It defaults to dicom.ImplementationVersionName
+// only while the Implementation Class UID is the default, so an AE configured with its own UID
+// never advertises go-radx's version name; an empty name keeps that behaviour.
 func WithImplementationVersionName(name string) AEOption {
 	return func(c *aeConfig) { c.implementationVersion = name }
 }
@@ -118,7 +121,8 @@ type AE struct {
 }
 
 // NewAE constructs an AE with the given local AE Title and options. Zero options yield the
-// pynetdicom-default timeouts and a 16382-byte maximum PDU length. It returns a typed
+// pynetdicom-default timeouts, a 16382-byte maximum PDU length, and go-radx's implementation
+// identity (dicom.ImplementationClassUID, dicom.ImplementationVersionName). It returns a typed
 // *ValidationError if the title is not a conformant AE Title.
 func NewAE(title AETitle, opts ...AEOption) (*AE, error) {
 	if _, err := ParseAETitle(string(title)); err != nil {
@@ -132,6 +136,12 @@ func NewAE(title AETitle, opts ...AEOption) (*AE, error) {
 	}
 	for _, opt := range opts {
 		opt(&cfg)
+	}
+	if cfg.implementationClassUID == "" {
+		cfg.implementationClassUID = dicom.ImplementationClassUID
+		if cfg.implementationVersion == "" {
+			cfg.implementationVersion = dicom.ImplementationVersionName
+		}
 	}
 	return &AE{title: title, cfg: cfg}, nil
 }

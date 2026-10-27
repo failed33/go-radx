@@ -119,6 +119,17 @@ func TestServerEncodedStoreIsBitPreserving(t *testing.T) {
 		file.Meta.ImplementationClassUID != implementationUID {
 		t.Errorf("file meta = %+v, want the C-STORE identity, negotiated syntax and implementation UID", file.Meta)
 	}
+	var defaultHeader bytes.Buffer
+	if err := h.ds.WriteFileMeta(&defaultHeader, h.info, ""); err != nil {
+		t.Fatalf("WriteFileMeta (default UID): %v", err)
+	}
+	defaultFile, err := dicom.Read(bytes.NewReader(append(defaultHeader.Bytes(), h.ds.Bytes...)))
+	if err != nil {
+		t.Fatalf("Read Part 10 (default UID): %v", err)
+	}
+	if got := defaultFile.Meta.ImplementationClassUID; got != dicom.ImplementationClassUID {
+		t.Errorf("empty implementation UID wrote (0002,0012) = %q, want %q", got, dicom.ImplementationClassUID)
+	}
 	var reencoded bytes.Buffer
 	if err := dicom.EncodeDataSet(&reencoded, file.DataSet, file.Meta.TransferSyntaxUID); err != nil {
 		t.Fatalf("EncodeDataSet(read): %v", err)

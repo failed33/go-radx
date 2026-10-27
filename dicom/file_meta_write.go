@@ -14,10 +14,16 @@ var tagFileMetaInformationVersion = NewTag(0x0002, 0x0001)
 // 0x0001 carried as OB (PS3.10 §7.1).
 var fileMetaInformationVersion = []byte{0x00, 0x01}
 
-// implementationClassUIDDefault identifies go-radx as the implementation when the
-// caller supplies no (0002,0012). It is a 2.25.-rooted UUID-derived UID, which
-// needs no organisational registration (PS3.5 §9.2).
-const implementationClassUIDDefault UID = "2.25.0"
+// go-radx's implementation identity (PS3.7 D.3.3.2, PS3.10 §7.1): written to File Meta
+// (0002,0012)/(0002,0013) when the caller supplies no Implementation Class UID, and
+// advertised by package dimse in every A-ASSOCIATE-RQ/AC unless overridden.
+const (
+	// ImplementationClassUID is a fixed UUID-derived UID under the 2.25 root, which needs no
+	// organisational registration (PS3.5 §9.2, B.2).
+	ImplementationClassUID UID = "2.25.169668526432250226257622507883463309733"
+	// ImplementationVersionName pairs with ImplementationClassUID (SH, at most 16 characters).
+	ImplementationVersionName = "GO_RADX"
+)
 
 // WriteFileMeta serialises the preamble, DICM magic, and the File Meta Information
 // group (always Explicit VR LE) with an auto-recomputed (0002,0000) Group Length
@@ -99,9 +105,14 @@ func buildFileMetaGroup(meta *FileMeta) (*DataSet, error) {
 		return nil, err
 	}
 
+	// The version name describes the default implementation only: it is supplied alongside the
+	// default UID, never paired with a caller's UID, and never replaces a caller's (0002,0013).
 	implClass := meta.ImplementationClassUID
 	if implClass == "" {
-		implClass = implementationClassUIDDefault
+		implClass = ImplementationClassUID
+		if _, ok := group.Get(TagImplementationVersionName); !ok {
+			group.Set(Element{Tag: TagImplementationVersionName, VR: VRSH, Value: NewStrings(VRSH, ImplementationVersionName)})
+		}
 	}
 	if err := setMetaUID(group, tagImplementationClassID, implClass, false); err != nil {
 		return nil, err

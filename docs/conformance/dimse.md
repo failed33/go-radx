@@ -138,7 +138,7 @@ against the v1 target declared in [`./dicom.md`](./dicom.md); a feature is shipp
 |---------------------|-----------|--------|
 | Presentation-context negotiation | PS3.8 §9.3.3.2 | Shipped |
 | Maximum PDU length | PS3.7 Annex D.1 | Shipped |
-| Implementation identity (class UID, version name) | PS3.7 D.3.3.2 | Shipped |
+| Implementation identity (class UID, version name) | PS3.7 D.3.3.2 | Shipped (always sent; default `dicom.ImplementationClassUID`) |
 | SCP/SCU role selection (sub-item 0x54) | PS3.7 D.3.3.4 | Shipped |
 | Asynchronous-operations window | PS3.7 D.3.3.3 | Shipped (`WithAsyncOps`; synchronous (1,1) window) |
 | User identity | PS3.7 D.3.3.7 | Shipped (`WithUserIdentity`, types 1-5; acceptor `WithAuthenticator`) |

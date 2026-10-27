@@ -65,7 +65,7 @@ increment).
 | Presentation-context negotiation | `add_requested_context` | MET | `NewPresentationContext` `dimse/presentation.go:84`; `acse.NegotiateAcceptor` `dimse/acse/negotiate.go:32` | - | Per-context result reasons `ContextResult` `presentation.go:34-40` |
 | Custom/arbitrary abstract syntaxes | private SOP class support | MET | `NewPresentationContext` takes any `dicom.SOPClassUID` `dimse/presentation.go:84` | - | SCP supported-context list is caller-supplied |
 | Preset context lists | `StoragePresentationContexts` etc. | MET | `VerificationContexts`/`StorageContexts`/`QueryRetrieveContexts`/`BasicWorklistContexts`/`ModalityPerformedContexts` `dimse/presets.go:99-145` | - | Curated radiology-first 37-class storage set vs pynetdicom's all-storage list; extensible per row above |
-| Implementation class UID / version name | implementation identity | MET | `WithImplementationClassUID`/`WithImplementationVersionName` `dimse/ae.go:69,75`; read-back `association.go:403,413` | - | |
+| Implementation class UID / version name | implementation identity | MET | `WithImplementationClassUID`/`WithImplementationVersionName` `dimse/ae.go:79,87`; default `dicom.ImplementationClassUID`/`ImplementationVersionName` `dimse/ae.go:140`; read-back `association.go:403,413` | - | Default identity mirrors `PYNETDICOM_IMPLEMENTATION_UID`/`_VERSION` |
 | Require called AE title | `require_called_aet` | MET | `WithRequireCalledAETitle` `dimse/server.go:73` | - | |
 | Require calling AE titles | `require_calling_aet` | MET | `WithRequireCallingAETitles` `dimse/server.go:80` | - | Plus `WithAssociationAuthorizer` `server.go:134` (beyond pynetdicom) |
 | Max concurrent associations | `maximum_associations` | MET | `WithMaxAssociations` `dimse/server.go:61` | - | |
