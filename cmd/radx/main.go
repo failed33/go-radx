@@ -10,7 +10,7 @@ package main
 import (
 	"os"
 
-	"github.com/codeninja55/go-radx/cmd/radx/internal/command"
+	"github.com/failed33/go-radx/cmd/radx/internal/command"
 )
 
 func main() {

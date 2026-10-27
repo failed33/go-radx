@@ -8,8 +8,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse"
 )
 
 // TestSCPHandlerStoresObject confirms the SCP handler writes a received object to disk in the

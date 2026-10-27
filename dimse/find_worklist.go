@@ -4,7 +4,7 @@ import (
 	"context"
 	"iter"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // ModalityWorklistInformationModelFind is the Modality Worklist Information Model — FIND SOP Class

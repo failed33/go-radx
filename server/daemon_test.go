@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dimse"
-	"github.com/codeninja55/go-radx/hl7v2"
+	"github.com/failed33/go-radx/dimse"
+	"github.com/failed33/go-radx/hl7v2"
 )
 
 // newTestBackends builds an in-memory catalogue and a temp-dir file store for a daemon test.

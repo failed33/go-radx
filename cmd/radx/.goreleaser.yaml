@@ -4,7 +4,7 @@
 #
 # go-radx is primarily a Go LIBRARY consumed via `go get` and the module proxy: its versioning is
 # git tags plus semver, not a binary release. The only binary artifact is the `radx` CLI, which
-# lives in its own Go module here at cmd/radx (own go.mod, `replace github.com/codeninja55/go-radx
+# lives in its own Go module here at cmd/radx (own go.mod, `replace github.com/failed33/go-radx
 # => ../..`). This config therefore lives beside that module and is invoked from this directory, so
 # `main: .` resolves to the CLI module and the replace directive compiles the in-tree library beside
 # it — exactly what the `cmd-radx` CI job does with GOWORK=off.
@@ -48,9 +48,9 @@ builds:
     # overrides and falls back to the embedded VCS stamp for a plain `go build`.
     ldflags:
       - -s -w
-      - -X github.com/codeninja55/go-radx/cmd/radx/internal/cli.version={{ .Version }}
-      - -X github.com/codeninja55/go-radx/cmd/radx/internal/cli.commit={{ .Commit }}
-      - -X github.com/codeninja55/go-radx/cmd/radx/internal/cli.date={{ .CommitDate }}
+      - -X github.com/failed33/go-radx/cmd/radx/internal/cli.version={{ .Version }}
+      - -X github.com/failed33/go-radx/cmd/radx/internal/cli.commit={{ .Commit }}
+      - -X github.com/failed33/go-radx/cmd/radx/internal/cli.date={{ .CommitDate }}
 
 archives:
   - id: radx

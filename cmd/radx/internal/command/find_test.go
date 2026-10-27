@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/cmd/radx/internal/exitcode"
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse"
+	"github.com/failed33/go-radx/cmd/radx/internal/exitcode"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse"
 )
 
 // cannedFindHandler answers a C-FIND by yielding a fixed set of matches then a terminal Success.

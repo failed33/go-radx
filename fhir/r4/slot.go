@@ -4,7 +4,7 @@ package r4
 
 import (
 	"encoding/json"
-	"github.com/codeninja55/go-radx/fhir"
+	"github.com/failed33/go-radx/fhir"
 )
 
 // SlotResourceType is the FHIR resourceType discriminator for Slot.

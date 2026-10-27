@@ -8,10 +8,10 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/codeninja55/go-radx/fhir/internal/gen/emit"
-	"github.com/codeninja55/go-radx/fhir/internal/gen/loader"
-	"github.com/codeninja55/go-radx/fhir/internal/gen/model"
-	"github.com/codeninja55/go-radx/fhir/internal/gen/plan"
+	"github.com/failed33/go-radx/fhir/internal/gen/emit"
+	"github.com/failed33/go-radx/fhir/internal/gen/loader"
+	"github.com/failed33/go-radx/fhir/internal/gen/model"
+	"github.com/failed33/go-radx/fhir/internal/gen/plan"
 )
 
 // Config controls a single generator run: which release to generate, where the

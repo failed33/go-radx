@@ -7,8 +7,8 @@ import (
 	"io"
 	"strings"
 
-	"github.com/codeninja55/go-radx/dimse/dul"
-	"github.com/codeninja55/go-radx/dimse/pdu"
+	"github.com/failed33/go-radx/dimse/dul"
+	"github.com/failed33/go-radx/dimse/pdu"
 )
 
 // applicationContextUID is the DICOM Application Context Name negotiated in every
@@ -454,7 +454,12 @@ func rejectAssociationFrom(ctx context.Context, conn *dul.Conn, m *dul.StateMach
 // Release performs the requestor-side graceful A-RELEASE: send an A-RELEASE-RQ, await the
 // A-RELEASE-RP, then close the transport (AR-3), leaving the machine in Sta1. It is bounded
 // by ctx and never panics.
-func (r *Requestor) Release(ctx context.Context) error {
+func (r *Requestor) Release(ctx context.Context) (err error) {
+	defer func() {
+		if closeErr := r.conn.Close(); err == nil {
+			err = closeErr
+		}
+	}()
 	if _, _, err := r.machine.Apply(dul.Evt11); err != nil { // -> AR-1 (send RELEASE-RQ) -> Sta7
 		return wrapState(r.machine, err)
 	}
@@ -471,7 +476,22 @@ func (r *Requestor) Release(ctx context.Context) error {
 	if _, ok := resp.(*pdu.ReleaseRP); !ok {
 		return wrapUnexpected(r.machine, resp.Type(), nil)
 	}
-	return r.conn.Close()
+	return nil
+}
+
+// CompletePeerRelease responds to an A-RELEASE-RQ already read by the DIMSE message loop.
+// It completes the legal release transition and closes the transport before returning.
+func CompletePeerRelease(ctx context.Context, conn *dul.Conn, machine *dul.StateMachine) error {
+	if _, _, err := machine.Apply(dul.Evt14); err != nil {
+		_ = conn.Close()
+		return wrapState(machine, err)
+	}
+	writeErr := conn.WritePDU(ctx, &pdu.ReleaseRP{})
+	closeErr := conn.Close()
+	if writeErr != nil {
+		return writeErr
+	}
+	return closeErr
 }
 
 // ServeRelease handles the acceptor side of a graceful release: read the A-RELEASE-RQ, send
@@ -747,13 +767,10 @@ func translateDriveError(m *dul.StateMachine, err error) error {
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return err
 	}
-	if errors.Is(err, io.EOF) {
-		return &ProtocolError{State: m.CurrentState(), Detail: "transport closed before the expected PDU arrived"}
-	}
 	if se, ok := errors.AsType[*dul.StateError](err); ok {
 		return &ProtocolError{State: se.State, Detail: se.Error()}
 	}
-	return &ProtocolError{State: m.CurrentState(), Detail: fmt.Sprintf("reading PDU: %v", err)}
+	return fmt.Errorf("reading association PDU: %w", err)
 }
 
 // wrapState wraps a state-machine fault as a typed *ProtocolError naming the state.

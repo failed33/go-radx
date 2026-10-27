@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // Level is the depth of a DICOMweb resource path: study, series, or instance. PS3.18

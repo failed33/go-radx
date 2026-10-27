@@ -4,13 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"net"
 	"os"
 	"sync"
 	"time"
 
-	"github.com/codeninja55/go-radx/dimse/pdu"
+	"github.com/failed33/go-radx/dimse/pdu"
 )
 
 // Conn is the socket owner at the DUL layer: it wraps a net.Conn and frames PDUs through
@@ -28,8 +27,36 @@ type Conn struct {
 	nc    net.Conn
 	artim *artim
 
+	// idle bounds each single PDU read or write; see SetIdleTimeout. Set before concurrent
+	// use of the connection (immediately after association establishment); never mutated
+	// mid-conversation.
+	idle time.Duration
+
 	writeMu sync.Mutex
 	readMu  sync.Mutex
+}
+
+// SetIdleTimeout bounds every subsequent single PDU read and write by d: the deadline is
+// derived fresh per PDU and dropped the moment that PDU completes, so it measures the gap
+// since the last transport progress — never the elapsed time of a message or an operation.
+// A PDU is at most the negotiated maximum PDU length, so steady progress at any line rate
+// keeps re-arming the bound, while d of true silence (or a peer that stops reading our
+// writes) surfaces as a *IdleTimeoutError with the caller's ctx still live. Zero disables
+// the bound (ctx alone governs). Call it once, after association establishment and before
+// data transfer; it is not safe to change while reads or writes are in flight.
+func (c *Conn) SetIdleTimeout(d time.Duration) { c.idle = d }
+
+// IdleTimeoutError reports that the connection's idle timeout expired while reading or
+// writing a single PDU: no transport progress for Idle, with the caller's ctx still live.
+// It is deliberately distinct from context.DeadlineExceeded (it does not wrap it), so a
+// caller can always tell the connection's own liveness bound from its context's deadline.
+// The interrupted PDU is half-framed; the connection must be discarded, not reused.
+type IdleTimeoutError struct {
+	Idle time.Duration
+}
+
+func (e *IdleTimeoutError) Error() string {
+	return fmt.Sprintf("dimse/dul: no PDU progress within the %s idle bound", e.Idle)
 }
 
 // NewConn wraps a net.Conn. artimTimeout configures the ARTIM timer; zero disables it.
@@ -62,11 +89,13 @@ func (c *Conn) WritePDU(ctx context.Context, p pdu.PDU) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	stop := c.watchContext(ctx, c.nc.SetWriteDeadline)
+	pduCtx, cancel := c.pduContext(ctx)
+	defer cancel()
+	stop := c.watchContext(pduCtx, c.nc.SetWriteDeadline)
 	defer stop()
 
 	if err := pdu.WritePDU(c.nc, p); err != nil {
-		return c.translateDeadline(ctx, fmt.Errorf("dimse/dul: write %s: %w", p.Type(), err))
+		return c.translateDeadline(ctx, pduCtx, fmt.Errorf("dimse/dul: write %s: %w", p.Type(), err))
 	}
 	return nil
 }
@@ -81,14 +110,26 @@ func (c *Conn) ReadPDU(ctx context.Context) (pdu.PDU, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
-	stop := c.watchContext(ctx, c.nc.SetReadDeadline)
+	pduCtx, cancel := c.pduContext(ctx)
+	defer cancel()
+	stop := c.watchContext(pduCtx, c.nc.SetReadDeadline)
 	defer stop()
 
 	p, err := pdu.ReadPDU(c.nc)
 	if err != nil {
-		return nil, c.translateDeadline(ctx, err)
+		return nil, c.translateDeadline(ctx, pduCtx, err)
 	}
 	return p, nil
+}
+
+// pduContext derives the per-PDU context: the caller's ctx, additionally bounded by the
+// connection's idle timeout when one is set. The cancel releases the timer the moment the
+// PDU completes, so the next PDU gets a fresh window.
+func (c *Conn) pduContext(ctx context.Context) (context.Context, context.CancelFunc) {
+	if c.idle <= 0 {
+		return ctx, func() {}
+	}
+	return context.WithTimeout(ctx, c.idle)
 }
 
 // DriveInbound reads one PDU on conn and advances the caller's state machine m by the event
@@ -112,20 +153,25 @@ func (c *Conn) ReadPDU(ctx context.Context) (pdu.PDU, error) {
 func DriveInbound(ctx context.Context, conn *Conn, m *StateMachine) (pdu.PDU, Action, error) {
 	p, readErr := conn.ReadPDU(ctx)
 	if readErr != nil {
-		// A context error is not a protocol violation; surface it directly, no FSM change.
-		if errors.Is(readErr, context.Canceled) || errors.Is(readErr, context.DeadlineExceeded) {
+		// A context error or the connection's own idle expiry is not a protocol violation;
+		// surface it directly, no FSM change. (The idle case leaves the stream half-consumed —
+		// the caller discards the association, as *IdleTimeoutError documents.)
+		var idleErr *IdleTimeoutError
+		if errors.Is(readErr, context.Canceled) || errors.Is(readErr, context.DeadlineExceeded) ||
+			errors.As(readErr, &idleErr) {
 			return nil, ActionNone, readErr
 		}
-		// A clean io.EOF at a PDU boundary is an orderly transport close: Evt17, not Evt19,
-		// and never an A-ABORT.
-		if errors.Is(readErr, io.EOF) {
+		// Codec errors are malformed peer input. Transport errors, including a truncated PDU,
+		// close the association without pretending the peer sent an invalid PDU.
+		var pduErr *pdu.PDUError
+		if !errors.As(readErr, &pduErr) {
 			action, _, smErr := m.Apply(Evt17)
 			if smErr != nil {
 				return nil, action, smErr
 			}
 			return nil, action, readErr
 		}
-		// Any other read error is treated as an invalid/unrecognised PDU: Evt19.
+		// A malformed PDU drives the protocol-fault path.
 		from := m.CurrentState()
 		action, _, smErr := m.Apply(Evt19)
 		sendFaultAbort(ctx, conn, action, pdu.AbortReasonUnrecognizedPDU)
@@ -242,16 +288,21 @@ func (c *Conn) watchContext(ctx context.Context, setDeadline func(time.Time) err
 }
 
 // translateDeadline converts the deadline-driven interruption from watchContext back into
-// the originating context error, so callers see context.Canceled / DeadlineExceeded
-// rather than an opaque timeout.
-func (c *Conn) translateDeadline(ctx context.Context, err error) error {
+// its cause: the caller's own context error when the caller cancelled or timed out, or a
+// typed *IdleTimeoutError when only the per-PDU idle window (pduContext) expired with the
+// caller's ctx still live. Callers therefore always see context.Canceled /
+// DeadlineExceeded for their own bounds and never for the connection's.
+func (c *Conn) translateDeadline(ctx, pduCtx context.Context, err error) error {
+	ne, isNetErr := errors.AsType[net.Error](err)
+	deadlineDriven := (isNetErr && ne.Timeout()) || errors.Is(err, os.ErrDeadlineExceeded)
+	if !deadlineDriven {
+		return err
+	}
 	if ctxErr := ctx.Err(); ctxErr != nil {
-		if ne, ok := errors.AsType[net.Error](err); ok && ne.Timeout() {
-			return ctxErr
-		}
-		if errors.Is(err, os.ErrDeadlineExceeded) {
-			return ctxErr
-		}
+		return ctxErr
+	}
+	if errors.Is(pduCtx.Err(), context.DeadlineExceeded) {
+		return &IdleTimeoutError{Idle: c.idle}
 	}
 	return err
 }

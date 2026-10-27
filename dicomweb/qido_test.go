@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // memQuery is an in-memory QueryBackend for the QIDO-RS round-trip tests. It returns its

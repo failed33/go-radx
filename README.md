@@ -8,7 +8,7 @@ implemented subset is still partial; the conformance statements under `docs/conf
 versioned subset each package targets.
 
 ```bash
-go get github.com/codeninja55/go-radx@main
+go get github.com/failed33/go-radx@main
 ```
 
 The published semantic-version tags (`v0.10.x` and earlier) belong to the legacy codebase on the
@@ -25,7 +25,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 func main() {

@@ -467,8 +467,8 @@ import (
     "fmt"
     "log"
 
-    "github.com/codeninja55/go-radx/convert"
-    "github.com/codeninja55/go-radx/dicom"
+    "github.com/failed33/go-radx/convert"
+    "github.com/failed33/go-radx/dicom"
 )
 
 func main() {
@@ -533,7 +533,7 @@ _ = conv // a non-nil Report even on success; empty here because StrictLoss was 
 
 ```go
 // This example targets R5; the Patient/Encounter and Reference types come from the fhir/r5 sub-package.
-import "github.com/codeninja55/go-radx/fhir/r5"
+import "github.com/failed33/go-radx/fhir/r5"
 
 msg, _ := hl7v2.Parse(adtRaw)
 

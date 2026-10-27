@@ -13,7 +13,7 @@
 
 package r4
 
-import "github.com/codeninja55/go-radx/fhir"
+import "github.com/failed33/go-radx/fhir"
 
 // Registry is the R4 release's resourceType-keyed factory, validation, and summary
 // metadata. The generated init() functions in registry.go and

@@ -3,8 +3,8 @@ package dimse
 import (
 	"context"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse/acse"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/acse"
 )
 
 // serveGetMessage services one inbound C-GET-RQ over an established acceptor association. It validates

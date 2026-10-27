@@ -3,7 +3,7 @@ package dimse
 import (
 	"context"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // StorageCommitmentNoSuchAction is the N-ACTION Failure "No Such Action" (0x0123, PS3.7 Annex C, in

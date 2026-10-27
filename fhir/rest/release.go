@@ -1,9 +1,9 @@
 package rest
 
 import (
-	"github.com/codeninja55/go-radx/fhir"
-	"github.com/codeninja55/go-radx/fhir/r4"
-	"github.com/codeninja55/go-radx/fhir/r5"
+	"github.com/failed33/go-radx/fhir"
+	"github.com/failed33/go-radx/fhir/r4"
+	"github.com/failed33/go-radx/fhir/r5"
 )
 
 // This file is the one place fhir/rest imports the release packages. The client is release-fixed,

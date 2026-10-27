@@ -7,7 +7,7 @@
 | Status | Draft for review (revised after five-dimension adversarial review) |
 | Owner | Andru (Architect) |
 | Authoring date | 2026-05-31 |
-| Module | `github.com/codeninja55/go-radx` (multi-module; see §7.4) |
+| Module | `github.com/failed33/go-radx` (multi-module; see §7.4) |
 | Toolchain | Go 1.26.3 (latest 1.26). No v1 deliverable depends on Go 1.27 (see §10.1) |
 | Supersedes | The prototype at `vcs/go-radx` and its four archived OpenSpec proposals (`vcs/_archive/go-radx/2026-05-31/`) |
 
@@ -262,7 +262,7 @@ consumers who only need the data model.
 
 ### 7.4 Module structure
 
-`cmd/radx` is a **separate Go module** (`github.com/codeninja55/go-radx/cmd/radx`) so library consumers importing the
+`cmd/radx` is a **separate Go module** (`github.com/failed33/go-radx/cmd/radx`) so library consumers importing the
 core packages do not inherit the CLI's Kong/TUI dependency graph. This directly serves the §4 primary-audience
 tie-breaker. The root module depends only on what the library needs.
 

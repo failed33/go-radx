@@ -3,8 +3,8 @@ package convert
 import (
 	"fmt"
 
-	"github.com/codeninja55/go-radx/fhir/r5"
-	"github.com/codeninja55/go-radx/hl7v2"
+	"github.com/failed33/go-radx/fhir/r5"
+	"github.com/failed33/go-radx/hl7v2"
 )
 
 // ORMToServiceRequestR5 converts an HL7 v2 order message (ORM^O01 or OMG^O19) to

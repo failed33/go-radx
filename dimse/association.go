@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse/acse"
-	"github.com/codeninja55/go-radx/dimse/dul"
-	"github.com/codeninja55/go-radx/dimse/pdu"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/acse"
+	"github.com/failed33/go-radx/dimse/dul"
+	"github.com/failed33/go-radx/dimse/pdu"
 )
 
 // Association is an established outbound DIMSE association. It wraps the acse requestor that
@@ -40,7 +40,10 @@ type Association struct {
 	// extended negotiation reads the acceptor's negotiated service-class application information here.
 	extendedNegotiations       []ExtendedNegotiation
 	commonExtendedNegotiations []CommonExtendedNegotiation
-	dimseTimeout               time.Duration
+	// dimseTimeout mirrors the connection's idle bound (Conn.SetIdleTimeout); the association
+	// keeps it only to know whether a liveness bound exists at all — cancelContext falls back
+	// to a fixed drain window when it is disabled.
+	dimseTimeout time.Duration
 	// localMaxPDULength is the maximum PDU length this AE advertised; peerMaxPDULength is the one
 	// the peer advertised in its A-ASSOCIATE-AC. A C-STORE is fragmented so every P-DATA-TF stays
 	// within both limits (MaxPDULength.SendCap), and an unlimited peer max (0) resolves to the
@@ -271,6 +274,10 @@ func (ae *AE) Associate(
 		_ = conn.Close()
 		return nil, translateAssociateError(err)
 	}
+	// The DIMSE timeout is the data-transfer idle bound: armed only once negotiation is
+	// complete (the handshake stays governed solely by the ACSE timeout above), it bounds
+	// each PDU read and write for the association's lifetime — see Conn.SetIdleTimeout.
+	conn.SetIdleTimeout(ae.cfg.dimseTimeout)
 	return &Association{
 		requestor:                  requestor,
 		accepted:                   fromPDUContextsAC(contexts, requestor.AcceptedContexts()),
@@ -283,17 +290,6 @@ func (ae *AE) Associate(
 		localMaxPDULength:          ae.cfg.maxPDULength,
 		peerMaxPDULength:           MaxPDULength(requestor.PeerMaxPDULength()),
 	}, nil
-}
-
-// dimseContext derives the per-operation context, applying the association's DIMSE timeout
-// when the caller's context has no earlier deadline. It mirrors AE.acseContext for the
-// data-transfer phase, so a peer that accepts the association and then never answers a DIMSE
-// request cannot block the operation indefinitely (the configured WithDIMSETimeout promise).
-func (a *Association) dimseContext(ctx context.Context) (context.Context, context.CancelFunc) {
-	if a.dimseTimeout <= 0 {
-		return ctx, func() {}
-	}
-	return context.WithTimeout(ctx, a.dimseTimeout)
 }
 
 // dial opens the connection to addr, honouring the AE's connection timeout (when set) and ctx
@@ -311,7 +307,7 @@ func (ae *AE) dial(ctx context.Context, addr string) (net.Conn, error) {
 	if tlsCfg == nil {
 		nc, err := d.DialContext(ctx, "tcp", addr)
 		if err != nil {
-			return nil, &AssociationError{Kind: AssociationNotEstablished, Detail: "dial: " + err.Error()}
+			return nil, &AssociationError{Kind: AssociationNotEstablished, Detail: "dial: " + err.Error(), Cause: err}
 		}
 		return nc, nil
 	}
@@ -334,7 +330,7 @@ func (ae *AE) dial(ctx context.Context, addr string) (net.Conn, error) {
 	td := tls.Dialer{NetDialer: &d, Config: tlsCfg}
 	nc, err := td.DialContext(dialCtx, "tcp", addr)
 	if err != nil {
-		return nil, &AssociationError{Kind: AssociationNotEstablished, Detail: "tls dial: " + err.Error()}
+		return nil, &AssociationError{Kind: AssociationNotEstablished, Detail: "tls dial: " + err.Error(), Cause: err}
 	}
 	return nc, nil
 }
@@ -523,11 +519,13 @@ func translateAssociateError(err error) error {
 		return nil
 	}
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-		return &AssociationError{Kind: AssociationTimeout, Detail: err.Error()}
+		return &AssociationError{Kind: AssociationTimeout, Detail: err.Error(), Cause: err}
 	}
 
 	if rej, ok := errors.AsType[*acse.RejectedError](err); ok {
-		return &AssociationError{Kind: AssociationRejected, Source: rej.Source, Reason: rej.Reason}
+		return &AssociationError{
+			Kind: AssociationRejected, Result: rej.Result, Source: rej.Source, Reason: rej.Reason,
+		}
 	}
 	if ab, ok := errors.AsType[*acse.AbortedError](err); ok {
 		kind := AssociationAborted

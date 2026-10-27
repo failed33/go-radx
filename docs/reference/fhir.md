@@ -40,9 +40,9 @@ The root `fhir` package re-exports the release-agnostic machinery (the `Resource
 
 ```go
 import (
-    "github.com/codeninja55/go-radx/fhir"       // release-agnostic: Resource, Unmarshal, As, Decimal, errors
-    "github.com/codeninja55/go-radx/fhir/r4"     // R4 4.0.1 resources and datatypes
-    "github.com/codeninja55/go-radx/fhir/r5"     // R5 5.0.0 resources and datatypes
+    "github.com/failed33/go-radx/fhir"       // release-agnostic: Resource, Unmarshal, As, Decimal, errors
+    "github.com/failed33/go-radx/fhir/r4"     // R4 4.0.1 resources and datatypes
+    "github.com/failed33/go-radx/fhir/r5"     // R5 5.0.0 resources and datatypes
 )
 ```
 
@@ -140,8 +140,8 @@ import (
     "encoding/json"
     "fmt"
 
-    "github.com/codeninja55/go-radx/fhir"
-    "github.com/codeninja55/go-radx/fhir/r5"
+    "github.com/failed33/go-radx/fhir"
+    "github.com/failed33/go-radx/fhir/r5"
 )
 
 func main() {

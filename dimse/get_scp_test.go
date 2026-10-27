@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // TestValidateGetContext is the regression for the C-GET negotiation guard (the symmetry with

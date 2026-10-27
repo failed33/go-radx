@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"go.uber.org/zap/zaptest/observer"
 
-	"github.com/codeninja55/go-radx/logging"
+	"github.com/failed33/go-radx/logging"
 )
 
 // phiSentinel is a clearly-synthetic stand-in for a patient value. It must never

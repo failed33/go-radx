@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dimse/dul"
-	"github.com/codeninja55/go-radx/dimse/pdu"
+	"github.com/failed33/go-radx/dimse/dul"
+	"github.com/failed33/go-radx/dimse/pdu"
 )
 
 func loopback(t *testing.T) (*dul.Conn, *dul.Conn) {
@@ -163,6 +163,34 @@ func TestRequestReleaseRoundTrip(t *testing.T) {
 	}
 	if acc.State() != dul.Sta1 {
 		t.Errorf("acceptor state after release = %v, want Sta1", acc.State())
+	}
+}
+
+func TestRequestReleaseClosesTransportWhenPeerDoesNotReply(t *testing.T) {
+	rqConn, acConn := loopback(t)
+	ctx, cancel := context.WithTimeout(t.Context(), time.Second)
+	defer cancel()
+
+	acceptorDone := make(chan *Acceptor, 1)
+	go func() {
+		acceptor, _ := Accept(ctx, acConn, acceptParams())
+		acceptorDone <- acceptor
+	}()
+	requestor, err := Associate(ctx, rqConn, echoRequest())
+	if err != nil {
+		t.Fatalf("Associate: %v", err)
+	}
+	acceptor := <-acceptorDone
+	if acceptor == nil {
+		t.Fatal("Accept failed")
+	}
+	_ = acceptor.Conn().Close()
+
+	if err := requestor.Release(ctx); err == nil {
+		t.Fatal("Release error = nil, want peer transport closure")
+	}
+	if err := requestor.Conn().WritePDU(t.Context(), &pdu.ReleaseRQ{}); err == nil {
+		t.Fatal("write after failed Release succeeded; transport was not closed")
 	}
 }
 

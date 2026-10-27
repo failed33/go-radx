@@ -1,8 +1,8 @@
 package convert
 
 import (
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/fhir/r4"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/fhir/r4"
 )
 
 // conceptNameForR4 maps the first Coding of an R4 CodeableConcept back to a DICOM

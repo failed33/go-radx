@@ -1,8 +1,8 @@
 package dimse
 
 import (
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse/pdu"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/pdu"
 )
 
 // UserIdentityType is the identity type of a user-identity negotiation request (PS3.7 D.3.3.7): it

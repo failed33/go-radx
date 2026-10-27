@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // Sentinel errors for the hostile-input caps (PRD §9.3) and unsupported features.

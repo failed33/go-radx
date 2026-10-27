@@ -646,7 +646,7 @@ import (
     "fmt"
     "log"
 
-    "github.com/codeninja55/go-radx/hl7v2"
+    "github.com/failed33/go-radx/hl7v2"
 )
 
 func main() {

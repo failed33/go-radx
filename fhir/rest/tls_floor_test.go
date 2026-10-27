@@ -14,8 +14,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/fhir"
-	"github.com/codeninja55/go-radx/fhir/rest"
+	"github.com/failed33/go-radx/fhir"
+	"github.com/failed33/go-radx/fhir/rest"
 )
 
 // legacyTLSOrigin simulates a legacy FHIR origin limited to TLS 1.1: a raw TLS listener that

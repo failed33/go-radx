@@ -1,4 +1,4 @@
-module github.com/codeninja55/go-radx
+module github.com/failed33/go-radx
 
 go 1.26.4
 

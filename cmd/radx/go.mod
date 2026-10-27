@@ -1,10 +1,10 @@
-module github.com/codeninja55/go-radx/cmd/radx
+module github.com/failed33/go-radx/cmd/radx
 
 go 1.26.4
 
 require (
 	github.com/alecthomas/kong v1.15.0
-	github.com/codeninja55/go-radx v0.0.0-00010101000000-000000000000
+	github.com/failed33/go-radx v0.0.0-00010101000000-000000000000
 	go.uber.org/zap v1.28.0
 	modernc.org/sqlite v1.52.0
 )
@@ -32,4 +32,4 @@ require (
 // pseudo-version above is a placeholder the replace resolves to the repository root, so
 // the GOWORK=off cmd-radx CI job and a downstream `go build` of this module both compile
 // the library source sitting beside it, not a stale module-cache copy.
-replace github.com/codeninja55/go-radx => ../..
+replace github.com/failed33/go-radx => ../..

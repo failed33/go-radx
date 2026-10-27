@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse"
-	"github.com/codeninja55/go-radx/dimse/integration/dcm4chee"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse"
+	"github.com/failed33/go-radx/dimse/integration/dcm4chee"
 )
 
 // TestInteropDcm4cheeMWLCFind is the M3 Modality Worklist interop gate against dcm4chee-arc: a

@@ -5,8 +5,8 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/codeninja55/go-radx/cmd/radx/internal/exitcode"
-	"github.com/codeninja55/go-radx/dimse"
+	"github.com/failed33/go-radx/cmd/radx/internal/exitcode"
+	"github.com/failed33/go-radx/dimse"
 )
 
 // parseAETitles validates a calling/called AE-title pair before any dial. An over-long or

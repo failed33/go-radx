@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | Scope | Engineering posture shared across every subsystem (CI, supply chain, interop, build, coverage, concurrency) |
-| Library | `github.com/codeninja55/go-radx` |
+| Library | `github.com/failed33/go-radx` |
 | Conformance version | 1 |
 | Status | Published |
 | Scope authority | This document is the single source of truth for the cross-cutting contract (PRD §6.1) |
@@ -135,8 +135,8 @@ wired — its pin is recorded but no leg invokes it, as noted under
 
 ## Build and module layout (go.work, cmd/radx CI)
 
-go-radx is two Go modules. The library packages live at the repository root (`github.com/codeninja55/go-radx`); the
-`radx` command-line interface lives in its own module under `cmd/radx` (`github.com/codeninja55/go-radx/cmd/radx`) so
+go-radx is two Go modules. The library packages live at the repository root (`github.com/failed33/go-radx`); the
+`radx` command-line interface lives in its own module under `cmd/radx` (`github.com/failed33/go-radx/cmd/radx`) so
 that consumers importing the library packages do not inherit the CLI's dependency graph. Both modules declare the same
 pinned Go toolchain, `go 1.26.4`, in agreement with the `[tools]` table in `mise.toml`, as the
 [Supply chain](#supply-chain) posture requires.

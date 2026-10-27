@@ -1,8 +1,8 @@
 package convert
 
 import (
-	"github.com/codeninja55/go-radx/fhir/r5"
-	"github.com/codeninja55/go-radx/hl7v2"
+	"github.com/failed33/go-radx/fhir/r5"
+	"github.com/failed33/go-radx/hl7v2"
 )
 
 // patientReferenceType is the FHIR resource type a subject Reference points at.

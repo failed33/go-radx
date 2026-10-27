@@ -10,8 +10,8 @@ func TestReadConfigDefaults(t *testing.T) {
 	if cfg.maxSequenceDepth != defaultMaxSequenceDepth {
 		t.Errorf("maxSequenceDepth = %d, want %d", cfg.maxSequenceDepth, defaultMaxSequenceDepth)
 	}
-	if cfg.stopAtPixelData {
-		t.Error("stopAtPixelData should default false")
+	if cfg.stopAtTag != 0 {
+		t.Errorf("stopAtTag = %s, want disabled (0)", cfg.stopAtTag)
 	}
 }
 
@@ -27,8 +27,8 @@ func TestReadOptionsApply(t *testing.T) {
 	if cfg.maxSequenceDepth != 8 {
 		t.Errorf("maxSequenceDepth = %d, want 8", cfg.maxSequenceDepth)
 	}
-	if !cfg.stopAtPixelData {
-		t.Error("stopAtPixelData should be true after WithStopAtPixelData")
+	if cfg.stopAtTag != TagPixelData {
+		t.Errorf("stopAtTag = %s after WithStopAtPixelData, want %s", cfg.stopAtTag, TagPixelData)
 	}
 }
 

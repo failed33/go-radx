@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse/pdu"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/pdu"
 )
 
 // associateForNegotiation opens an association from a fresh SCU to srv with the given options and the

@@ -16,7 +16,7 @@
 #
 goos: darwin
 goarch: arm64
-pkg: github.com/codeninja55/go-radx/fhir/r5
+pkg: github.com/failed33/go-radx/fhir/r5
 cpu: Apple M1
 BenchmarkMarshalSearchSetBundle-8     	     100	   2431639 ns/op	  913188 B/op	    4621 allocs/op
 BenchmarkMarshalSearchSetBundle-8     	     100	   2103083 ns/op	  891348 B/op	    4613 allocs/op
@@ -67,4 +67,4 @@ BenchmarkMarshalSummary/count-8       	     100	     14380 ns/op	   12664 B/op	 
 BenchmarkMarshalSummary/count-8       	     100	     14201 ns/op	   12664 B/op	     201 allocs/op
 BenchmarkMarshalSummary/count-8       	     100	     14765 ns/op	   12649 B/op	     201 allocs/op
 PASS
-ok  	github.com/codeninja55/go-radx/fhir/r5	7.150s
+ok  	github.com/failed33/go-radx/fhir/r5	7.150s

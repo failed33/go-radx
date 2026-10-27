@@ -37,7 +37,7 @@ func seedPart10(ts TransferSyntax) []byte {
 // seedEncapsulatedPart10 returns a minimal Part 10 stream whose pixel data is an
 // encapsulated fragment stream (empty Basic Offset Table, one fragment, Sequence
 // Delimitation Item) under ts, an encapsulated transfer syntax. The file-meta group is
-// built through the library's own writeFileMeta (so the seed's group-0002 matches a
+// built through the library's own WriteFileMeta (so the seed's group-0002 matches a
 // Write-produced object), and the geometry elements pixel resolution needs plus the
 // undefined-length (7FE0,0010) header are appended so the seed reaches the
 // fragment-stream capture path shared by Read and ReadPixelDataFrom.
@@ -48,7 +48,7 @@ func seedEncapsulatedPart10(ts TransferSyntax) []byte {
 		TransferSyntaxUID:          ts,
 	}
 	var out bytes.Buffer
-	_ = writeFileMeta(&out, [128]byte{}, meta)
+	_ = WriteFileMeta(&out, [128]byte{}, meta)
 
 	// The main dataset must carry the geometry that ResolvePixelGeometry requires
 	// (Rows, Columns, BitsAllocated) before the encapsulated fragment stream is parsed.
@@ -121,7 +121,7 @@ func seedDeflateBomb() []byte {
 		TransferSyntaxUID:          DeflatedExplicitVRLittleEndian,
 	}
 	var out bytes.Buffer
-	_ = writeFileMeta(&out, [128]byte{}, meta)
+	_ = WriteFileMeta(&out, [128]byte{}, meta)
 	out.Write(deflated.Bytes())
 	return out.Bytes()
 }

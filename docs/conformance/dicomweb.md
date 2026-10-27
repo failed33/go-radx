@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | Standard | DICOMweb (DICOM PS3.18, RESTful services) |
-| Library | `github.com/codeninja55/go-radx` |
+| Library | `github.com/failed33/go-radx` |
 | Conformance version | 1 |
 | Status | Published |
 | Scope authority | This document is the single source of truth for DICOMweb scope (PRD §6.1) |

@@ -9,7 +9,7 @@ import (
 	"net/textproto"
 	"strings"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // StoreResult is the per-instance outcome a WarnableStoreBackend reports for an accepted

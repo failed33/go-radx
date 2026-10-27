@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dimse/pdu"
+	"github.com/failed33/go-radx/dimse/pdu"
 )
 
 func TestConnWriteReadPDURoundTrip(t *testing.T) {
@@ -66,6 +66,33 @@ func TestConnReadHonoursContextCancellation(t *testing.T) {
 	case <-time.After(2 * time.Second):
 		t.Fatal("ReadPDU did not return after context cancellation")
 	}
+}
+
+func TestDriveInboundTreatsTruncatedPDUAsTransportClosure(t *testing.T) {
+	client, server := net.Pipe()
+	t.Cleanup(func() { client.Close(); server.Close() })
+
+	machine := NewStateMachine()
+	machine.forceState(Sta6)
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		_, _ = client.Write([]byte{byte(pdu.PDUTypeData), 0})
+		_ = client.Close()
+	}()
+
+	_, _, err := DriveInbound(t.Context(), NewConn(server, 0), machine)
+	if !errors.Is(err, io.ErrUnexpectedEOF) {
+		t.Fatalf("DriveInbound error = %v, want io.ErrUnexpectedEOF", err)
+	}
+	var stateErr *StateError
+	if errors.As(err, &stateErr) {
+		t.Fatalf("truncated transport was classified as protocol violation: %v", stateErr)
+	}
+	if machine.CurrentState() != Sta1 {
+		t.Fatalf("state = %v, want Sta1 after transport closure", machine.CurrentState())
+	}
+	<-done
 }
 
 // TestPDUToEventMapping covers the inbound-PDU -> received-event mapping the run loop

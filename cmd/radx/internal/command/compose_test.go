@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/codeninja55/go-radx/cmd/radx/internal/exitcode"
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dicomweb"
+	"github.com/failed33/go-radx/cmd/radx/internal/exitcode"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dicomweb"
 )
 
 // composeSourceDataSet is the synthetic dataset the compose fixtures marshal to PS3.18 JSON:

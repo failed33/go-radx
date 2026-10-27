@@ -3,7 +3,7 @@ package dimse
 import (
 	"context"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // NDelete issues an N-DELETE that removes an existing managed SOP Instance (PS3.7 §10.1.6).
@@ -47,9 +47,6 @@ func (a *Association) NDelete(ctx context.Context, sopClassUID dicom.SOPClassUID
 
 	conn := a.requestor.Conn()
 	machine := a.requestor.Machine()
-	opCtx, cancel := a.dimseContext(ctx)
-	defer cancel()
-
 	rq := CommandSet{
 		CommandField:            CommandNDeleteRQ,
 		MessageID:               a.nextMessageID(),
@@ -57,11 +54,11 @@ func (a *Association) NDelete(ctx context.Context, sopClassUID dicom.SOPClassUID
 		RequestedSOPInstanceUID: instanceUID,
 		CommandDataSetType:      CommandDataSetNotPresent,
 	}
-	if err := sendCommand(opCtx, conn, machine, pcID, rq); err != nil {
+	if err := sendCommand(ctx, conn, machine, pcID, rq); err != nil {
 		return Status{}, err
 	}
 
-	rsp, _, err := receiveCommand(opCtx, conn, machine)
+	rsp, _, err := receiveCommand(ctx, conn, machine)
 	if err != nil {
 		return Status{}, err
 	}

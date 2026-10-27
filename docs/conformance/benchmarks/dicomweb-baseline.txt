@@ -16,7 +16,7 @@
 #
 goos: darwin
 goarch: arm64
-pkg: github.com/codeninja55/go-radx/dicomweb
+pkg: github.com/failed33/go-radx/dicomweb
 cpu: Apple M1
 BenchmarkMarshalJSON-8     	    2000	     23466 ns/op	  30.17 MB/s	    7693 B/op	     121 allocs/op
 BenchmarkMarshalJSON-8     	    2000	     13130 ns/op	  53.92 MB/s	    7693 B/op	     121 allocs/op
@@ -37,4 +37,4 @@ BenchmarkMultipartRead-8   	    2000	     18645 ns/op	 968.95 MB/s	   81622 B/op
 BenchmarkMultipartRead-8   	    2000	     18857 ns/op	 958.06 MB/s	   81660 B/op	     160 allocs/op
 BenchmarkMultipartRead-8   	    2000	     18288 ns/op	 987.89 MB/s	   81634 B/op	     160 allocs/op
 PASS
-ok  	github.com/codeninja55/go-radx/dicomweb	1.214s
+ok  	github.com/failed33/go-radx/dicomweb	1.214s

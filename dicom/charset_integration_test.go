@@ -19,8 +19,8 @@ func part10WithRawMain(t *testing.T, mainRaw []byte) []byte {
 	}
 	var buf bytes.Buffer
 	var preamble [128]byte
-	if err := writeFileMeta(&buf, preamble, meta); err != nil {
-		t.Fatalf("writeFileMeta: %v", err)
+	if err := WriteFileMeta(&buf, preamble, meta); err != nil {
+		t.Fatalf("WriteFileMeta: %v", err)
 	}
 	buf.Write(mainRaw)
 	return buf.Bytes()

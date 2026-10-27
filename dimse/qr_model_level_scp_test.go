@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // The SCP serve paths must enforce the per-model Query/Retrieve Level table (validateModelLevel) on

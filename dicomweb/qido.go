@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // QueryBackend is the server-side pluggable query source for QIDO-RS (PS3.18 §10.6). It

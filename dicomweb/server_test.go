@@ -11,7 +11,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // memStore is an in-memory StoreBackend/RetrieveBackend for the in-process round-trip

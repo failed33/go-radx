@@ -78,11 +78,13 @@ func readHeader(r io.Reader) (PDUType, uint32, error) {
 	}
 	pt := PDUType(h[0])
 	if !pt.valid() {
-		return 0, 0, fmt.Errorf("pdu: unrecognised PDU type 0x%02X", h[0])
+		return 0, 0, &PDUError{Detail: fmt.Sprintf("unrecognised PDU type 0x%02X", h[0])}
 	}
 	length := binary.BigEndian.Uint32(h[2:])
 	if length > MaxPDULength {
-		return 0, 0, fmt.Errorf("pdu: %s declared body length %d exceeds maximum %d", pt, length, MaxPDULength)
+		return 0, 0, &PDUError{Detail: fmt.Sprintf(
+			"%s declared body length %d exceeds maximum %d", pt, length, MaxPDULength,
+		)}
 	}
 	return pt, length, nil
 }

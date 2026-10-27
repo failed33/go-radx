@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // warningStore is a StoreBackend that reports a Warning Reason for a configured SOP Instance

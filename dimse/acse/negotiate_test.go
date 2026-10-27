@@ -3,7 +3,7 @@ package acse
 import (
 	"testing"
 
-	"github.com/codeninja55/go-radx/dimse/pdu"
+	"github.com/failed33/go-radx/dimse/pdu"
 )
 
 const (

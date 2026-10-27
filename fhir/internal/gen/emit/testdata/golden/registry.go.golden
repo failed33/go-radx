@@ -2,7 +2,7 @@
 
 package r5
 
-import "github.com/codeninja55/go-radx/fhir"
+import "github.com/failed33/go-radx/fhir"
 
 // init registers every r5 resource's resourceType discriminator with the
 // release-local Registry, so r5.UnmarshalResource can dispatch a payload's

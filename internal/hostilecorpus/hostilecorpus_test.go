@@ -34,7 +34,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/codeninja55/go-radx/dicomweb"
+	"github.com/failed33/go-radx/dicomweb"
 )
 
 // malformedRoot is the committed raw malformed corpus, relative to this test's package directory.

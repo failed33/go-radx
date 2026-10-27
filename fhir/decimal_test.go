@@ -3,7 +3,7 @@ package fhir_test
 import (
 	"testing"
 
-	"github.com/codeninja55/go-radx/fhir"
+	"github.com/failed33/go-radx/fhir"
 )
 
 func TestDecimalMarshalJSONLexicalFidelity(t *testing.T) {

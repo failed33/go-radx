@@ -14,8 +14,8 @@ import (
 
 	"github.com/alecthomas/kong"
 
-	"github.com/codeninja55/go-radx/cmd/radx/internal/cli"
-	"github.com/codeninja55/go-radx/cmd/radx/internal/exitcode"
+	"github.com/failed33/go-radx/cmd/radx/internal/cli"
+	"github.com/failed33/go-radx/cmd/radx/internal/exitcode"
 )
 
 // banner is the one-line startup banner shown only in human format on an interactive stdout.

@@ -229,7 +229,7 @@ type AEOption func(*aeConfig)
 
 // Timeouts mirror pynetdicom defaults; all are also overridable per-association via context deadlines.
 func WithACSETimeout(d time.Duration) AEOption        // default 30s — association negotiation/release
-func WithDIMSETimeout(d time.Duration) AEOption       // default 30s — awaiting a DIMSE response
+func WithDIMSETimeout(d time.Duration) AEOption       // default 30s — per-PDU idle bound, both directions
 func WithNetworkTimeout(d time.Duration) AEOption     // default 60s — idle association
 func WithConnectionTimeout(d time.Duration) AEOption  // default none — TCP connect
 func WithMaxPDULength(n MaxPDULength) AEOption         // default 16382; 0 = unlimited (see negotiation)
@@ -244,6 +244,11 @@ func WithStoreHandler(h StoreHandler) AEOption
 // WithCommitmentHandler registers the sink for the Storage Commitment N-EVENT-REPORT result.
 func WithCommitmentHandler(h CommitmentHandler) AEOption
 ```
+
+`WithDIMSETimeout` bounds *silence*, never operation duration: every PDU read and write on an
+established association arms a fresh window and drops it on completion, on both the SCU and SCP
+sides. A multi-hour C-MOVE that keeps streaming never expires; a peer that stops sending for longer
+than the bound fails with `*TimeoutError` while the caller's own context is still live.
 
 ### Establishing an outbound association (SCU)
 
@@ -771,8 +776,74 @@ type CommitmentHandler interface {
 }
 ```
 
-Notification events are observed by registering callbacks on the `Server` (or `AE`) for diagnostics and metrics; they
-never block the protocol.
+### Bit-preserving C-STORE
+
+A storage SCP that persists instances exactly as received implements `EncodedStoreHandler` instead of `StoreHandler`
+(pynetdicom's `event.encoded_dataset()`, DCMTK `storescp`). The handler receives the dataset PDV payload in the
+negotiated transfer syntax, without the dispatcher decoding the whole dataset. The dispatcher decodes only the
+top-level elements through Series Instance UID `(0020,000E)` with `dicom.WithStopAtTag`. It needs that prefix to keep
+the mandatory checks: the Affected SOP Class UID must match the negotiated context, and the Affected SOP Instance UID
+must match the dataset's `(0008,0018)`. A mismatch still faults the association before the handler runs. The handler
+reads its routing attributes from the same prefix. When a handler implements both interfaces, the SCP dispatcher
+uses `EncodedStoreHandler`. The C-GET sub-operation sink (`WithStoreHandler`) still takes a `StoreHandler`.
+
+```go
+// EncodedDataSet is a C-STORE dataset exactly as it arrived on the wire.
+type EncodedDataSet struct {
+	Bytes  []byte         // PDV payload in OpInfo.TransferSyntax; per message, the handler may retain it
+	Prefix *dicom.DataSet // top-level elements through Series Instance UID (0020,000E)
+}
+
+type EncodedStoreHandler interface {
+	StoreEncoded(ctx context.Context, ds EncodedDataSet, info OpInfo) Status
+}
+
+// WriteFileMeta writes the PS3.10 header: zero preamble, DICM, and File Meta Information built from the C-STORE
+// SOP Class/Instance UID, the negotiated transfer syntax, and implementationClassUID. A Part 10 file is that
+// header followed by ds.Bytes unchanged.
+func (ds EncodedDataSet) WriteFileMeta(w io.Writer, info OpInfo, implementationClassUID dicom.UID) error
+```
+
+The header is small, so buffer it to learn the file size, then stream the header and `ds.Bytes` without copying the
+dataset:
+
+```go
+func (s *archive) StoreEncoded(ctx context.Context, ds dimse.EncodedDataSet, info dimse.OpInfo) dimse.Status {
+	var header bytes.Buffer
+	if err := ds.WriteFileMeta(&header, info, implementationUID); err != nil {
+		return dimse.StatusStoreCannotUnderstand
+	}
+	size := int64(header.Len() + len(ds.Bytes))
+	body := io.MultiReader(&header, bytes.NewReader(ds.Bytes))
+	if err := s.put(ctx, body, size); err != nil {
+		return dimse.StatusStoreOutOfResources
+	}
+	return dimse.StatusStoreSuccess
+}
+```
+
+### Server observations
+
+Use `WithConnectionObserver(func(ConnectionEvent))` to observe inbound TCP admission, capacity refusal, and
+termination. Admission precedes TLS and DICOM negotiation. Each event carries an opaque per-server connection ID and
+the remote address, including when negotiation fails before a handler runs. Closure distinguishes DICOM release, peer
+abort, orderly EOF, server-context stop, and failure without changing the original error. A coarse operation
+identifies the error-return boundary (establish, receive, process DIMSE, or release); cancellation between operations
+has no operation label.
+
+Use `WithResponseSendObserver(func(ResponseSendEvent))` to observe every local DIMSE response send on an inbound
+connection. This covers all supported C- and N-service replies, including pending/final and unsupported-operation
+responses. The event contains the connection ID, presentation ID, response command field, Message ID Being Responded
+To, status, and original send error. Completion includes command and dataset encoding and transmission. Nil error
+proves only local send completion, not peer receipt. Requests and sends on other connections are excluded, even if
+they inherit the handler context.
+
+`ServerConnectionID(ctx)` exposes the same ID to handlers; it is zero outside an inbound server context. The hooks are
+independent and optional. Callbacks run synchronously on accept/connection goroutines, can be concurrent across
+connections, and hold no server lock. Keep callbacks fast and nonblocking; do not panic or call a blocking server
+method such as `Shutdown`. The library creates no observer queues or goroutines and exports no telemetry. Remote
+addresses and opaque errors may contain private information: sanitize them before logging or exporting. SCU operations
+retain their existing returned-error and `LastError` contracts.
 
 When the SCP's C-GET / C-MOVE handler drives sub-operation C-STOREs, each sub-operation gets a **real, distinct Message
 ID**, and each C-STORE-RSP is read through the same reassembly loop as a normal response — the prototype used
@@ -809,7 +880,19 @@ type ProtocolError struct {
 	Detail string
 }
 func (e *ProtocolError) Error() string
+
+// TimeoutError reports peer silence on an established association: no PDU in either direction for
+// Idle (the configured WithDIMSETimeout) while the caller's ctx was still live. The interrupted PDU
+// is half-framed, so the association must be discarded, not reused.
+type TimeoutError struct {
+	Idle time.Duration
+}
+func (e *TimeoutError) Error() string
 ```
+
+`TimeoutError` deliberately does **not** unwrap to `context.DeadlineExceeded`: a caller must be able
+to tell a stalled peer from its own cancellation or deadline without provenance guesswork. Operation
+identity is not carried on the error — it belongs to the caller's own wrapping.
 
 A DIMSE `Status` of `Failure` category is **not** an `error` by itself — it is data the caller inspects with
 `status.IsFailure()`. Transport, association, and protocol faults are `error`s. This separation lets a caller

@@ -6,9 +6,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse/dul"
-	"github.com/codeninja55/go-radx/dimse/pdu"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/acse"
+	"github.com/failed33/go-radx/dimse/dul"
+	"github.com/failed33/go-radx/dimse/pdu"
 )
 
 // pdvOverhead is the per-PDV item overhead that counts against the negotiated Maximum Length: the
@@ -123,6 +124,11 @@ type messageReassembler struct {
 	datasetBytes   []byte
 	commandLast    bool
 	expectsDataset bool
+	// encodedStore is set when the SCP handler implements EncodedStoreHandler; keepEncoded is set
+	// once a C-STORE-RQ command is decoded under it. Such a dataset is decoded only up to
+	// encodedPrefixStop and its datasetBytes are handed to the handler as received.
+	encodedStore bool
+	keepEncoded  bool
 
 	command *CommandSet
 	dataset *dicom.DataSet
@@ -190,7 +196,11 @@ func (r *messageReassembler) add(item pdu.PresentationDataValue) (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		ds, err := dicom.DecodeDataSet(bytes.NewReader(r.datasetBytes), ts)
+		var opts []dicom.ReadOption
+		if r.keepEncoded {
+			opts = append(opts, dicom.WithStopAtTag(encodedPrefixStop))
+		}
+		ds, err := dicom.DecodeDataSet(bytes.NewReader(r.datasetBytes), ts, opts...)
 		if err != nil {
 			return false, &ProtocolError{State: Sta6, Detail: "decoding C-STORE dataset with the negotiated transfer syntax: " + err.Error()}
 		}
@@ -224,7 +234,17 @@ func (r *messageReassembler) decodeCommand() error {
 	r.command = &cmd
 	r.commandLast = true
 	r.expectsDataset = cmd.HasDataSet()
+	r.keepEncoded = r.encodedStore && cmd.CommandField == CommandCStoreRQ
 	return nil
+}
+
+// encodedDataset returns the dataset bytes as received when the message is a C-STORE kept encoded
+// for an EncodedStoreHandler, and nil otherwise.
+func (r *messageReassembler) encodedDataset() []byte {
+	if !r.keepEncoded {
+		return nil
+	}
+	return r.datasetBytes
 }
 
 // complete reports whether the whole message has arrived: the command is decoded, and either no
@@ -266,7 +286,15 @@ func receiveCommand(ctx context.Context, conn *dul.Conn, m *dul.StateMachine) (C
 // independently of the dataset (DIMSE-001). It advances the state machine by the local P-DATA
 // request event (Evt9) before each write, exactly as the C-ECHO send does, so the DUL lifecycle is
 // honoured. The dataset (when present) is encoded with ts, the negotiated transfer syntax.
-func sendMessage(ctx context.Context, conn *dul.Conn, m *dul.StateMachine, pcID uint8, cmd CommandSet, ds *dicom.DataSet, ts dicom.TransferSyntax, sendCap MaxPDULength) error {
+func sendMessage(ctx context.Context, conn *dul.Conn, m *dul.StateMachine, pcID uint8, cmd CommandSet, ds *dicom.DataSet, ts dicom.TransferSyntax, sendCap MaxPDULength) (err error) {
+	if observation := responseObservation(ctx, conn, cmd); observation != nil {
+		defer func() {
+			observation.response(ResponseSendEvent{
+				ConnectionID: observation.id, PresentationID: pcID, CommandField: cmd.CommandField,
+				MessageIDBeingRespondedTo: cmd.MessageIDBeingRespondedTo, StatusCode: cmd.Status, Err: err,
+			})
+		}()
+	}
 	pdus, err := fragmentMessage(cmd, ds, ts, pcID, sendCap)
 	if err != nil {
 		return err
@@ -276,6 +304,12 @@ func sendMessage(ctx context.Context, conn *dul.Conn, m *dul.StateMachine, pcID 
 			return wrapStateError(m, serr)
 		}
 		if err := conn.WritePDU(ctx, p); err != nil {
+			// A peer that stops reading our writes is the same silence as one that stops
+			// sending; surface the connection's idle expiry as the same typed timeout.
+			var idleErr *dul.IdleTimeoutError
+			if errors.As(err, &idleErr) {
+				return &TimeoutError{Idle: idleErr.Idle}
+			}
 			return err
 		}
 	}
@@ -296,6 +330,19 @@ func receiveMessage(ctx context.Context, conn *dul.Conn, m *dul.StateMachine, r 
 		}
 		data, ok := p.(*pdu.DataTF)
 		if !ok {
+			if _, released := p.(*pdu.ReleaseRQ); released {
+				if releaseErr := acse.CompletePeerRelease(ctx, conn, m); releaseErr != nil {
+					return CommandSet{}, nil, 0, &TransportError{Op: "complete peer release", Cause: releaseErr}
+				}
+				return CommandSet{}, nil, 0, &PeerReleaseError{}
+			}
+			if aborted, ok := p.(*pdu.Abort); ok {
+				return CommandSet{}, nil, 0, &AbortError{
+					Provider: aborted.Source == pdu.AbortSourceServiceProvider,
+					Source:   aborted.Source,
+					Reason:   aborted.Reason,
+				}
+			}
 			return CommandSet{}, nil, 0, &ProtocolError{
 				State:  m.CurrentState(),
 				Detail: "expected a P-DATA-TF carrying a DIMSE message, got " + p.Type().String(),
@@ -322,10 +369,13 @@ func translateInboundError(m *dul.StateMachine, err error) error {
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return err
 	}
+	if idleErr, ok := errors.AsType[*dul.IdleTimeoutError](err); ok {
+		return &TimeoutError{Idle: idleErr.Idle}
+	}
 	if se, ok := errors.AsType[*dul.StateError](err); ok {
 		return &ProtocolError{State: se.State, Detail: se.Error()}
 	}
-	return &ProtocolError{State: m.CurrentState(), Detail: "reading DIMSE message: " + err.Error()}
+	return &TransportError{Op: "read DIMSE message", Cause: err}
 }
 
 // wrapStateError wraps a dul state-machine fault as a typed *ProtocolError naming the state.

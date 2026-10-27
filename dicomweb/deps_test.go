@@ -25,7 +25,7 @@ var forbiddenCoreDeps = []string{
 // `go list -deps` so the assertion reflects the real compiled import graph rather than a
 // hand-maintained list.
 func TestCoreImportGraphExcludesCloudSDKs(t *testing.T) {
-	out, err := exec.Command("go", "list", "-deps", "github.com/codeninja55/go-radx/dicomweb").Output()
+	out, err := exec.Command("go", "list", "-deps", "github.com/failed33/go-radx/dicomweb").Output()
 	if err != nil {
 		t.Fatalf("go list -deps: %v", err)
 	}

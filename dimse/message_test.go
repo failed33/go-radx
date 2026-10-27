@@ -2,11 +2,16 @@ package dimse
 
 import (
 	"bytes"
+	"context"
 	"errors"
+	"net"
 	"testing"
+	"time"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse/pdu"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse/acse"
+	"github.com/failed33/go-radx/dimse/dul"
+	"github.com/failed33/go-radx/dimse/pdu"
 )
 
 // sampleStoreDataSet builds a tiny dataset with a SOP Class/Instance and one extra element, enough
@@ -26,6 +31,111 @@ func collectPDVs(pdus []*pdu.DataTF) []pdu.PresentationDataValue {
 		items = append(items, p.Items...)
 	}
 	return items
+}
+
+func messageTestAssociation(t *testing.T) (context.Context, *acse.Requestor, *acse.Acceptor) {
+	t.Helper()
+	client, server := net.Pipe()
+	t.Cleanup(func() { client.Close(); server.Close() })
+	requestConn := dul.NewConn(client, 0)
+	acceptConn := dul.NewConn(server, 0)
+	ctx, cancel := context.WithTimeout(t.Context(), time.Second)
+	t.Cleanup(cancel)
+
+	type acceptResult struct {
+		acceptor *acse.Acceptor
+		err      error
+	}
+	accepted := make(chan acceptResult, 1)
+	go func() {
+		acceptor, err := acse.Accept(ctx, acceptConn, acse.AcceptParams{
+			CalledAETitle: "ACCEPTOR",
+			MaxPDULength:  16382,
+			Supported: []acse.SupportedContext{{
+				AbstractSyntax:   string(verificationSOPClass),
+				TransferSyntaxes: []string{string(dicom.ImplicitVRLittleEndian)},
+			}},
+		})
+		accepted <- acceptResult{acceptor: acceptor, err: err}
+	}()
+	requestor, err := acse.Associate(ctx, requestConn, acse.Request{
+		CalledAETitle: "ACCEPTOR", CallingAETitle: "REQUESTOR", MaxPDULength: 16382,
+		Contexts: []pdu.PresentationContextRQ{{
+			ID: 1, AbstractSyntax: string(verificationSOPClass),
+			TransferSyntaxes: []string{string(dicom.ImplicitVRLittleEndian)},
+		}},
+	})
+	if err != nil {
+		t.Fatalf("Associate: %v", err)
+	}
+	result := <-accepted
+	if result.err != nil {
+		t.Fatalf("Accept: %v", result.err)
+	}
+	return ctx, requestor, result.acceptor
+}
+
+func TestReceiveMessageCompletesPeerRelease(t *testing.T) {
+	ctx, requestor, acceptor := messageTestAssociation(t)
+
+	peerDone := make(chan error, 1)
+	go func() {
+		if _, _, applyErr := acceptor.Machine().Apply(dul.Evt11); applyErr != nil {
+			peerDone <- applyErr
+			return
+		}
+		if writeErr := acceptor.Conn().WritePDU(ctx, &pdu.ReleaseRQ{}); writeErr != nil {
+			peerDone <- writeErr
+			return
+		}
+		response, _, readErr := dul.DriveInbound(ctx, acceptor.Conn(), acceptor.Machine())
+		if readErr == nil {
+			_, ok := response.(*pdu.ReleaseRP)
+			if !ok {
+				readErr = errors.New("peer did not receive A-RELEASE-RP")
+			}
+		}
+		peerDone <- readErr
+	}()
+
+	_, _, _, err := receiveMessage(
+		ctx, requestor.Conn(), requestor.Machine(), newMessageReassembler(dicom.ImplicitVRLittleEndian),
+	)
+	var peerRelease *PeerReleaseError
+	if !errors.As(err, &peerRelease) {
+		t.Fatalf("receiveMessage error = %T %v, want *PeerReleaseError", err, err)
+	}
+	if err := <-peerDone; err != nil {
+		t.Fatalf("peer release: %v", err)
+	}
+}
+
+func TestReceiveMessagePreservesPeerAbort(t *testing.T) {
+	ctx, requestor, acceptor := messageTestAssociation(t)
+
+	abort := &pdu.Abort{Source: pdu.AbortSourceServiceUser, Reason: pdu.AbortReasonNotSpecified}
+	peerDone := make(chan error, 1)
+	go func() {
+		if _, _, err := acceptor.Machine().Apply(dul.Evt15); err != nil {
+			peerDone <- err
+			return
+		}
+		peerDone <- acceptor.Conn().WritePDU(ctx, abort)
+	}()
+
+	_, _, _, err := receiveMessage(
+		ctx, requestor.Conn(), requestor.Machine(), newMessageReassembler(dicom.ImplicitVRLittleEndian),
+	)
+	var abortErr *AbortError
+	if !errors.As(err, &abortErr) {
+		t.Fatalf("receiveMessage error = %T %v, want *AbortError", err, err)
+	}
+	if abortErr.Provider || abortErr.Source != abort.Source || abortErr.Reason != abort.Reason {
+		t.Fatalf("AbortError = %+v, want source/reason from peer", abortErr)
+	}
+	if err := <-peerDone; err != nil {
+		t.Fatalf("peer abort: %v", err)
+	}
 }
 
 // TestCommandLastBitSetIndependentOfDataset is the named DIMSE-001 regression — the concrete

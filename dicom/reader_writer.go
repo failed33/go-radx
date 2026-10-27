@@ -2,7 +2,6 @@ package dicom
 
 import (
 	"bufio"
-	"bytes"
 	"compress/flate"
 	"fmt"
 	"io"
@@ -120,7 +119,8 @@ func WriteFile(path string, f *File, opts ...WriteOption) error {
 // Write encodes f to w. The encoder is selected from the declared transfer syntax;
 // an unsupported transfer syntax is rejected before any bytes are written (Codex
 // DCM-002). For Deflated Explicit VR LE the main dataset is deflated after the
-// file-meta group.
+// file-meta group. The main dataset streams directly to w. A late value or I/O
+// error can leave partial output; callers must discard that output on error.
 func Write(w io.Writer, f *File, opts ...WriteOption) error {
 	_ = newWriteConfig(opts...)
 	if f == nil || f.Meta == nil || f.DataSet == nil {
@@ -131,30 +131,40 @@ func Write(w io.Writer, f *File, opts ...WriteOption) error {
 		return err
 	}
 
-	// Encode the main dataset to a buffer first so an encoding error surfaces before
-	// any bytes reach w, and so the deflated path can compress the whole dataset.
-	var mainBuf bytes.Buffer
-	if err := writeDataSet(&mainBuf, f.DataSet, ts); err != nil {
+	if err := checkDataSetTransferSyntax(f.DataSet, ts); err != nil {
 		return err
 	}
 
-	if err := writeFileMeta(w, f.Preamble, f.Meta); err != nil {
+	if err := WriteFileMeta(w, f.Preamble, f.Meta); err != nil {
 		return err
 	}
 
-	if ts.IsDeflated() {
-		fw, err := flate.NewWriter(w, flate.DefaultCompression)
-		if err != nil {
-			return err
-		}
-		if _, err := fw.Write(mainBuf.Bytes()); err != nil {
-			return err
-		}
-		return fw.Close()
-	}
+	return EncodeDataSet(w, f.DataSet, ts)
+}
 
-	_, err := w.Write(mainBuf.Bytes())
-	return err
+// Syntax mismatch is knowable without encoding or loading large values. Keep
+// this validation ahead of file meta even though value/I/O errors may be late.
+func checkDataSetTransferSyntax(ds *DataSet, ts TransferSyntax) error {
+	if ts.IsEncapsulated() {
+		return nil
+	}
+	for e := range ds.All() {
+		switch value := e.Value.(type) {
+		case *encapsulatedValue:
+			return encapsulatedTransferSyntaxError(e.Tag, e.VR)
+		case *DeferredValue:
+			if value.encapTS != "" {
+				return encapsulatedTransferSyntaxError(e.Tag, e.VR)
+			}
+		case *sequenceValue:
+			for item := range value.seq.Items() {
+				if err := checkDataSetTransferSyntax(item.DataSet, ts); err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
 }
 
 // supportedEncapsulated reports whether ts is an encapsulated syntax whose Part 10

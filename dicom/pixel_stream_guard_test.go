@@ -17,7 +17,7 @@ func buildEncapsulatedPart10(ts TransferSyntax, fragments func(out *bytes.Buffer
 		TransferSyntaxUID:          ts,
 	}
 	var out bytes.Buffer
-	_ = writeFileMeta(&out, [128]byte{}, meta)
+	_ = WriteFileMeta(&out, [128]byte{}, meta)
 
 	geom := NewDataSet()
 	geom.Set(Element{Tag: NewTag(0x0028, 0x0002), VR: VRUS, Value: NewInts(VRUS, 1)})

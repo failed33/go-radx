@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/dicomweb"
+	"github.com/failed33/go-radx/dicomweb"
 )
 
 // regressionGuardEnv gates the negative-control test below. The guard proves the

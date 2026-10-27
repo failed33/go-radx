@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dicomweb"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dicomweb"
 )
 
 // TestDICOMwebRetrieveValidatesParentUIDs asserts the WADO hierarchy fix: an instance fetched by SOP

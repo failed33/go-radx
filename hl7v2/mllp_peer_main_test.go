@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/codeninja55/go-radx/hl7v2/integration/hl7peer"
+	"github.com/failed33/go-radx/hl7v2/integration/hl7peer"
 )
 
 // mllpPeer is the python-hl7 peer container TestMain provisions for the interop gate. It stays

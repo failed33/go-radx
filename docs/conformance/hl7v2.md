@@ -4,7 +4,7 @@
 |-------|-------|
 | Statement version | 1.0.0 (tracks go-radx v1) |
 | Standard | HL7 v2.x (Health Level Seven version 2) |
-| Package | `github.com/codeninja55/go-radx/hl7v2` |
+| Package | `github.com/failed33/go-radx/hl7v2` |
 | Base version posture | HL7 v2.5.1 layouts; version-tolerant parser (see [Version posture](#version-posture)) |
 | Status | Normative for v1. Growth is a reviewed change to this file. |
 
@@ -362,7 +362,7 @@ import (
     "fmt"
     "log"
 
-    "github.com/codeninja55/go-radx/hl7v2"
+    "github.com/failed33/go-radx/hl7v2"
 )
 
 func main() {

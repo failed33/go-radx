@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/codeninja55/go-radx/cmd/radx/internal/exitcode"
+	"github.com/failed33/go-radx/cmd/radx/internal/exitcode"
 )
 
 // Synthetic, non-PHI HL7 v2 messages for the convert tests. The names and identifiers are

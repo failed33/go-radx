@@ -1,6 +1,6 @@
 package acse
 
-import "github.com/codeninja55/go-radx/dimse/pdu"
+import "github.com/failed33/go-radx/dimse/pdu"
 
 // insignificantTransferSyntax is the placeholder transfer syntax a rejected presentation
 // context still carries in an A-ASSOCIATE-AC (PS3.8 9.3.3.2 requires exactly one, even when

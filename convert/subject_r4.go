@@ -1,8 +1,8 @@
 package convert
 
 import (
-	"github.com/codeninja55/go-radx/fhir/r4"
-	"github.com/codeninja55/go-radx/hl7v2"
+	"github.com/failed33/go-radx/fhir/r4"
+	"github.com/failed33/go-radx/hl7v2"
 )
 
 // patientSubjectR4 resolves the Patient subject Reference for an HL7-sourced R4

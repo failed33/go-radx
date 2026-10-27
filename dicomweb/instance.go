@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/codeninja55/go-radx/dicom"
+	"github.com/failed33/go-radx/dicom"
 )
 
 // defaultStorageTransferSyntax is the transfer syntax a dataset is encoded in when it

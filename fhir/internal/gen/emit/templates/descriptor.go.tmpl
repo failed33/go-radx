@@ -5,9 +5,9 @@ package {{ .Package }}
 {{ if .NeedsStrconv }}import (
 	"strconv"
 
-	"github.com/codeninja55/go-radx/fhir"
+	"github.com/failed33/go-radx/fhir"
 )
-{{ else }}import "github.com/codeninja55/go-radx/fhir"
+{{ else }}import "github.com/failed33/go-radx/fhir"
 {{ end }}
 // init registers a structural validation descriptor for every {{ .Package }} resource with
 // the release-local Registry, so {{ .Package }}.Validate can check a resource's

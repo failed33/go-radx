@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/codeninja55/go-radx/dicom"
-	"github.com/codeninja55/go-radx/dimse"
+	"github.com/failed33/go-radx/dicom"
+	"github.com/failed33/go-radx/dimse"
 )
 
 // TestQueryCatalogueUnindexedKeyFetchesFromStore asserts the shared C-FIND/QIDO matching path honours a

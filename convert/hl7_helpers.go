@@ -1,6 +1,6 @@
 package convert
 
-import "github.com/codeninja55/go-radx/hl7v2"
+import "github.com/failed33/go-radx/hl7v2"
 
 // hl7DateTimeToFHIR renders an HL7 v2 DTM as a FHIR dateTime string, preserving
 // the source precision rather than fabricating components the sender omitted. An

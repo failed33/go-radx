@@ -665,6 +665,7 @@ func WithMaxElementLen(n uint32) ReadOption   // cap a single element's value fi
 func WithMaxSequenceDepth(n int) ReadOption   // cap SQ nesting (default 64)
 func WithLenientDates() ReadOption            // accept partial DA forms
 func WithStopAtPixelData() ReadOption         // defer/skip the pixel-data element for partial reads
+func WithStopAtTag(t Tag) ReadOption          // stop before the first top-level element with tag >= t
 func WithDefaultCharacterSet(cs ...string) ReadOption
 ```
 
@@ -731,6 +732,16 @@ Group Length is recomputed and written first. The encoder serialises the group-0
 bytes following the group-length element through the last group-0002 element, and prepends the `UL` group-length with
 that count (PS3.10 Table 7.1-1, where group length is Type 1). The prototype started file-meta at `(0002,0001)` and
 never wrote the group length at all (Codex DCM-001), producing files that strict readers reject.
+
+`WriteFileMeta` exposes that header writer for a caller that already holds the main dataset encoded in
+`meta.TransferSyntaxUID`, such as a bit-preserving C-STORE SCP. The Part 10 file is the header followed by those bytes
+unchanged:
+
+```go
+// WriteFileMeta writes the preamble, DICM magic, and the File Meta Information group with a recomputed
+// (0002,0000) Group Length.
+func WriteFileMeta(w io.Writer, preamble [128]byte, meta *FileMeta) error
+```
 
 ## Transfer syntaxes
 
@@ -993,7 +1004,7 @@ import (
     "fmt"
     "log"
 
-    "github.com/codeninja55/go-radx/dicom"
+    "github.com/failed33/go-radx/dicom"
 )
 
 func main() {
