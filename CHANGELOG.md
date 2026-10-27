@@ -121,6 +121,7 @@ legacy codebase (`legacy-main`) and are not continued here.
   Implementation Class UID sub-item (PS3.7 D.3.3.2), which an AE without `WithImplementationClassUID` previously
   omitted, and Part 10 File Meta writes it to `(0002,0012)` instead of the non-identifying `2.25.0`. An empty override
   keeps the default; the default version name accompanies only the default UID.
+  ([#5](https://github.com/failed33/go-radx/pull/5))
 
 ## [0.12.0] - 2026-08-28
 
